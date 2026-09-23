@@ -1,2 +1,7 @@
-# hack-032ef148-team
-Hackathon team repository for Батыс
+# Хакатон — команда «БАТЫС»
+
+Hackathon team repository for Батыс.
+
+## Команда
+
+- Бисенбаев Султан Бекрикулы
