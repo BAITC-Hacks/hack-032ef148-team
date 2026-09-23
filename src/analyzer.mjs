@@ -307,6 +307,40 @@ export function analyzeDocuments(before, after) {
       0.86, first, null, "Проверить, что каждая функция упразднённой позиции получила нового владельца."));
   }
 
+  // Redistribution advice (optional task item 3): the owner whose other duties are closest to a function
+  // is the most natural home for it. Returns the best fit and the clause that justifies it.
+  const afterOwnerList = [...new Set(afterFunctions.map((item) => item.unit))].filter((owner) => owner !== "Общие функции");
+  function ownerFit(text, owner, exclude = new Set()) {
+    let best = { score: 0, item: null };
+    for (const item of afterFunctions) {
+      if (item.unit !== owner || exclude.has(item.id)) continue;
+      const score = similarity(text, item.text);
+      if (score > best.score) best = { score, item };
+    }
+    return best;
+  }
+  // Where most of a dissolved owner's other functions went: its de facto successor.
+  function heirOf(beforeOwner) {
+    const counts = new Map();
+    for (const match of functionMatches) {
+      if (match.beforeItem.unit !== beforeOwner || isOrphaned(match) || match.afterItem.unit === "Общие функции") continue;
+      counts.set(match.afterItem.unit, (counts.get(match.afterItem.unit) || 0) + 1);
+    }
+    return [...counts].sort((a, b) => b[1] - a[1])[0] || null;
+  }
+  function suggestOwner(text, { prefer, exclude } = {}) {
+    // A unit that still exists and lost the duty is the first candidate: returning it restores the old control.
+    const survivor = prefer && afterOwnerList.find((owner) => similarity(owner, prefer) >= 0.82);
+    if (survivor) return { owner: survivor, reason: "подразделение сохранилось в новой структуре, функцию можно вернуть" };
+    const heir = prefer && heirOf(prefer);
+    if (heir) return { owner: heir[0], reason: `к нему перешли другие функции «${prefer}»: ${heir[1]} шт.` };
+    const ranked = afterOwnerList.map((owner) => ({ owner, ...ownerFit(text, owner, exclude) })).sort((a, b) => b.score - a.score);
+    const top = ranked[0];
+    if (!top || top.score < 0.2) return null;
+    return { owner: top.owner, reason: `его функции ближе всего по содержанию (п. ${top.item.clause}, сходство ${Math.round(top.score * 100)}%)` };
+  }
+  const suggestionText = (suggestion) => suggestion ? `Рекомендуемый владелец: «${suggestion.owner}» — ${suggestion.reason}.` : "Назначить владельца функции.";
+
   const functionMap = [];
   const ref = (item) => ({ clause: item.clause, unit: item.unit, text: compactSnippet(item.text, 240) });
 
@@ -314,16 +348,23 @@ export function analyzeDocuments(before, after) {
     const { beforeItem, afterItem, score } = match;
     if (!afterItem) {
       functionMap.push({ status: "lost", score: Math.round(score * 100), before: ref(beforeItem), after: null });
-      findings.push(makeFinding("function_lost", "high", "Возможная потеря функции", "Для функции из предыдущей редакции не найдено достаточно близкого соответствия.", Math.max(0.58, 1 - score), beforeItem, null, "Назначить владельца функции либо документально подтвердить её исключение."));
+      const suggestion = suggestOwner(beforeItem.text, { prefer: beforeItem.unit });
+      const finding = makeFinding("function_lost", "high", "Возможная потеря функции", "Для функции из предыдущей редакции не найдено достаточно близкого соответствия.", Math.max(0.58, 1 - score), beforeItem, null, `${suggestionText(suggestion)} Либо документально подтвердить её исключение.`);
+      finding.suggestedOwner = suggestion?.owner || null;
+      findings.push(finding);
       continue;
     }
 
     const ownerChanged = ownerDiffers(beforeItem, afterItem);
     if (isOrphaned(match)) {
       functionMap.push({ status: "lost", score: Math.round(score * 100), before: ref(beforeItem), after: ref(afterItem) });
-      findings.push(makeFinding("function_lost", "high", `Функция исключена у «${beforeItem.unit}»`,
+      const suggestion = suggestOwner(beforeItem.text, { prefer: beforeItem.unit, exclude: new Set([afterItem.id]) });
+      const finding = makeFinding("function_lost", "high", `Функция исключена у «${beforeItem.unit}»`,
         `В новой редакции у этого владельца функции нет. Похожая формулировка сохранилась только у «${afterItem.unit}» (п. ${afterItem.clause}), за которым она была закреплена и раньше.`,
-        Math.min(0.9, score * 0.9), beforeItem, afterItem, "Подтвердить, что исключение намеренное и контроль не ослаблен, либо вернуть функцию владельцу."));
+        Math.min(0.9, score * 0.9), beforeItem, afterItem,
+        `Подтвердить, что исключение намеренное и контроль не ослаблен. ${suggestionText(suggestion)}`);
+      finding.suggestedOwner = suggestion?.owner || null;
+      findings.push(finding);
       continue;
     }
 
@@ -370,7 +411,18 @@ export function analyzeDocuments(before, after) {
       if (score < 0.74) continue;
       const conflict = /(?<![\p{L}\p{N}])(?:утвержда(?:ет|ют)|контролиру(?:ет|ют)|согласовыва(?:ет|ют)|провод(?:ит|ят) провер|назнача(?:ет|ют)|принима(?:ет|ют) риск)/iu.test(`${left.text} ${right.text}`);
       overlaps += 1;
-      findings.push(makeFinding(conflict ? "conflict_risk" : "function_duplicate", conflict ? "high" : "medium", conflict ? "Потенциальный конфликт интересов (полномочий)" : "Возможное дублирование функций", `Похожие функции закреплены за разными владельцами: «${left.unit}» (п. ${left.clause}) и «${right.unit}» (п. ${right.clause}).`, score, { ...left, side: "after" }, { ...right, side: "after" }, conflict ? "Контрольная функция у двух владельцев: определить, кто утверждает/контролирует, через матрицу RACI." : "Развести зоны ответственности через RACI или назначить единого владельца."));
+      // Keep the duty with the owner whose remaining profile fits it better; the other stays consulted.
+      const pair = new Set([left.id, right.id]);
+      const leftFit = ownerFit(left.text, left.unit, pair).score;
+      const rightFit = ownerFit(right.text, right.unit, pair).score;
+      const [keep, other] = leftFit >= rightFit ? [left, right] : [right, left];
+      const decisive = Math.max(leftFit, rightFit) >= 0.2 && Math.abs(leftFit - rightFit) >= 0.05;
+      const fitNote = decisive
+        ? `Оставить единым владельцем «${keep.unit}» (соответствие профилю ${Math.round(Math.max(leftFit, rightFit) * 100)}% против ${Math.round(Math.min(leftFit, rightFit) * 100)}%), для «${other.unit}» — роль «консультируется/информируется» в RACI.`
+        : "Назначить единого владельца (R/A) в матрице RACI, второму подразделению — роль «консультируется».";
+      const finding = makeFinding(conflict ? "conflict_risk" : "function_duplicate", conflict ? "high" : "medium", conflict ? "Потенциальный конфликт интересов (полномочий)" : "Возможное дублирование функций", `Похожие функции закреплены за разными владельцами: «${left.unit}» (п. ${left.clause}) и «${right.unit}» (п. ${right.clause}).`, score, { ...left, side: "after" }, { ...right, side: "after" }, conflict ? `Контрольная функция у двух владельцев. ${fitNote}` : fitNote);
+      finding.suggestedOwner = decisive ? keep.unit : null;
+      findings.push(finding);
     }
   }
 

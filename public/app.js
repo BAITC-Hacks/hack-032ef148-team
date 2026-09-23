@@ -34,7 +34,17 @@ function showView(name, anchor) {
   else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view, button.dataset.anchor)));
+function showHelpTab(name) {
+  document.querySelectorAll("[data-help]").forEach((tab) => tab.classList.toggle("active", tab.dataset.help === name));
+  byId("helpWeb").classList.toggle("hidden", name !== "web");
+  byId("helpMobile").classList.toggle("hidden", name !== "mobile");
+}
+
+document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => {
+  if (button.dataset.helpTab) showHelpTab(button.dataset.helpTab);
+  showView(button.dataset.view, button.dataset.anchor);
+}));
+document.querySelectorAll("[data-help]").forEach((tab) => tab.addEventListener("click", () => showHelpTab(tab.dataset.help)));
 document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.go)));
 
 for (const side of ["before", "after"]) {
@@ -69,7 +79,7 @@ function evidenceBlock(item) {
 function findingCard(finding) {
   return `<article class="finding-card" data-severity="${escapeHtml(finding.severity)}">
     <span class="severity-bar"></span><div class="finding-main"><header><div><span class="pill">${escapeHtml(typeLabels[finding.type] || finding.type)}</span><h3>${escapeHtml(finding.title)}</h3></div><div class="finding-meta"><span class="severity-tag ${escapeHtml(finding.severity)}">${severityLabels[finding.severity] || ""}</span>${finding.aiReviewed ? `<span class="ai-tag ${finding.aiSupported ? "ok" : "doubt"}">${finding.aiSupported ? "AI подтвердил" : "AI сомневается"}</span>` : ""}<span class="confidence">${finding.confidence}%</span><span class="review-status ${escapeHtml(finding.status)}">${reviewLabels[finding.status] || finding.status}</span></div></header>
-    <p>${escapeHtml(finding.explanation)}</p><div class="evidence-grid">${finding.evidence.map(evidenceBlock).join("")}</div><p class="recommendation"><b>Рекомендация:</b> ${escapeHtml(finding.recommendation)}</p>
+    <p>${escapeHtml(finding.explanation)}</p><div class="evidence-grid">${finding.evidence.map(evidenceBlock).join("")}</div><p class="recommendation">${finding.suggestedOwner ? `<span class="owner-chip">→ ${escapeHtml(finding.suggestedOwner)}</span>` : ""}<b>Рекомендация:</b> ${escapeHtml(finding.recommendation)}</p>
     ${finding.comment ? `<p class="expert-comment"><b>Комментарий эксперта:</b> ${escapeHtml(finding.comment)}</p>` : ""}
     ${finding.reviewedBy ? `<p class="reviewer">Решение: ${escapeHtml(finding.reviewedBy.name)} · ${new Date(finding.reviewedAt).toLocaleString("ru-RU")}</p>` : ""}
     <div class="finding-actions"><button class="approve" data-review="approved" data-id="${finding.id}">✓ Подтвердить</button><button class="reject" data-review="rejected" data-id="${finding.id}">× Отклонить</button></div></div></article>`;
@@ -138,7 +148,7 @@ function renderResult(record) {
 document.querySelector(".tabs").addEventListener("click", (event) => {
   const tab = event.target.closest("[data-tab]");
   if (!tab) return;
-  document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === tab));
+  document.querySelectorAll("[data-tab]").forEach((item) => item.classList.toggle("active", item === tab));
   document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === `${tab.dataset.tab}Panel`));
 });
 

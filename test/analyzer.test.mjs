@@ -65,6 +65,8 @@ test("synthetic sample: dissolved unit, lost function, transformation and duplic
   assert.equal(lost.length, 1);
   assert.equal(lost[0].evidence[0].clause, "4.4.2");
   assert.match(lost[0].evidence[0].snippet, /антикоррупционных/);
+  // Redistribution advice: the orphaned duty goes to the successor that absorbed the unit's other functions.
+  assert.equal(lost[0].suggestedOwner, "Департамент операционного аудита");
 
   assert.ok(byType("function_duplicate").some((finding) => finding.evidence.map((item) => item.clause).sort().join() === "4.1.2,4.3.2"));
 });
@@ -85,6 +87,8 @@ test("organizer control set (редакция 8 → 9): reorganization, lost and
   const lostClauses = result.findings.filter((finding) => finding.type === "function_lost").map((finding) => finding.evidence[0].clause);
   assert.ok(lostClauses.includes("5.5.4"), "ДККМ loses analysis of continuous audit results");
   assert.ok(lostClauses.includes("5.5.10"), "ДККМ loses preparing proposals for the plan");
+  const lostQuality = result.findings.find((finding) => finding.type === "function_lost" && finding.evidence[0].clause === "5.5.4");
+  assert.match(lostQuality.suggestedOwner, /контроля качества/, "the surviving ДККМ is advised to take the duty back");
 
   const narrowed = result.findings.find((finding) => finding.type === "function_narrowed" && finding.evidence[0].clause === "5.5.5");
   assert.ok(narrowed, "quarterly reporting frequency disappears");

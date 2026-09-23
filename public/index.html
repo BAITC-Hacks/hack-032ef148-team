@@ -21,9 +21,9 @@
         <button class="nav-item active" data-view="upload"><span>＋</span>Новый анализ</button>
         <button class="nav-item" data-view="results"><span>⌁</span>Результаты</button>
         <button class="nav-item" data-view="history"><span>◷</span>История</button>
-        <button class="nav-item" data-view="help"><span>?</span>Помощь</button>
+        <button class="nav-item" data-view="help"><span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>Помощь</button>
       </nav>
-      <button class="sidebar-mobile" data-view="help" data-anchor="mobileHelp" type="button">
+      <button class="sidebar-mobile" data-view="help" data-help-tab="mobile" type="button">
         <span>📱</span><div><b>Есть мобильное приложение</b><small>Android и iOS · откройте на телефоне</small></div>
       </button>
       <div class="sidebar-note">
@@ -37,7 +37,7 @@
       <header class="topbar">
         <div><p class="eyebrow">ИИ-АГЕНТ ОРГАНИЗАЦИОННОГО АУДИТА</p><h1 id="pageTitle">Новое сравнение</h1></div>
         <div class="top-actions">
-          <button class="ghost-button help-button" data-view="help" type="button" aria-label="Помощь">? Помощь</button>
+          <button class="ghost-button help-button" data-view="help" type="button" aria-label="Помощь"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Помощь</button>
           <button class="ghost-button hidden" id="installButton">Установить</button>
           <button class="account-button" id="accountButton" type="button"><span class="avatar" id="accountAvatar">?</span><span id="accountLabel">Войти</span></button>
         </div>
@@ -148,7 +148,15 @@
       </section>
 
       <section class="view" id="helpView">
-        <div class="section-intro"><div><span class="step">?</span><h2>Как пользоваться БАТЫС AI</h2></div><span class="muted">7 шагов · около 3 минут</span></div>
+        <div class="section-intro help-intro">
+          <div><span class="step"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span><h2>Как пользоваться БАТЫС AI</h2></div>
+          <div class="tabs help-tabs" role="tablist" aria-label="Инструкция">
+            <button class="tab active" data-help="web" role="tab" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Веб-версия</button>
+            <button class="tab" data-help="mobile" role="tab" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>Мобильное приложение</button>
+          </div>
+        </div>
+
+        <div class="help-panel" id="helpWeb">
         <div class="help-steps">
           <article class="help-step">
             <div class="help-text"><span class="step">01</span><h3>Запустите анализ</h3><p>Нажмите <b>«▶ Положение о внутреннем аудите: редакция 8 → 9»</b>, чтобы проверить систему на контрольном комплекте. Для своих документов загрузите файл «ДО» и файл «ПОСЛЕ» (DOCX, PDF, XLSX, CSV, TXT) и нажмите «Запустить анализ».</p></div>
@@ -182,19 +190,43 @@
             <div class="help-text"><span class="step">08</span><h3>История</h3><p>Все анализы сохраняются в разделе <b>«История»</b>: можно вернуться к любому и продолжить экспертную проверку.</p></div>
           </article>
         </div>
+        </div>
 
+        <div class="help-panel hidden" id="helpMobile">
         <div class="mobile-card" id="mobileHelp">
           <div class="mobile-copy">
-            <span class="pill">Мобильное приложение</span>
+            <span class="pill">Установка</span>
             <h2>БАТЫС AI на телефоне: Android и iOS</h2>
-            <p>Те же анализ, выводы с цитатами и экспертная проверка — с телефона. Телефон должен быть в той же сети, что и этот компьютер.</p>
+            <p>Те же анализ, выводы с цитатами и экспертная проверка — с телефона. Телефон должен быть в той же Wi-Fi сети, что и компьютер с сервером.</p>
             <ol>
               <li><b>Сразу в браузере:</b> отсканируйте QR-код камерой или откройте адрес <b class="lan-url" id="lanUrl">…</b> в Safari или Chrome. Чтобы сайт открывался как приложение, добавьте его на главный экран: «Поделиться» → «На экран „Домой“» на iPhone или «Установить приложение» на Android.</li>
               <li><b>Нативное приложение:</b> установите <b>Expo Go</b> из App Store или Google Play и запустите приложение из папки <code>mobile/</code> (инструкция в README).</li>
             </ol>
           </div>
-          <div class="mobile-qr"><img id="lanQr" alt="QR-код веб-версии для телефона"><small>Веб-версия для телефона</small></div>
-          <div class="mobile-shots"><img src="/help/mobile-1.png" alt="Мобильное приложение: главный экран" loading="lazy"><img src="/help/mobile-2.png" alt="Мобильное приложение: результаты" loading="lazy"></div>
+          <div class="mobile-qr"><img id="lanQr" alt="QR-код для открытия на телефоне"><small>Откройте на телефоне</small></div>
+        </div>
+        <div class="help-steps">
+          <article class="help-step">
+            <div class="help-text"><span class="step">01</span><h3>Подключитесь к серверу</h3><p>Телефон и компьютер с БАТЫС AI должны быть в одной сети. Зелёная точка в шапке — подключение есть. Адрес меняется в блоке <b>«Сервер»</b> на вкладке «Анализ».</p></div>
+          </article>
+          <article class="help-step phone">
+            <div class="help-text"><span class="step">02</span><h3>Запустите анализ</h3><p>Нажмите <b>«▶ Положение о внутреннем аудите: редакция 8 → 9»</b> для демо или выберите файлы «ДО» и «ПОСЛЕ» (DOCX, PDF, XLSX, CSV, TXT) и нажмите «Запустить анализ».</p></div>
+            <img src="/help/mobile-1.png" alt="Мобильное приложение: главный экран" loading="lazy">
+          </article>
+          <article class="help-step phone">
+            <div class="help-text"><span class="step">03</span><h3>Изучите результаты</h3><p>Сверху — потери, сужения, переносы, дубли и конфликты. Фильтры под цифрами оставляют только нужные выводы.</p></div>
+            <img src="/help/mobile-2.png" alt="Мобильное приложение: результаты" loading="lazy">
+          </article>
+          <article class="help-step">
+            <div class="help-text"><span class="step">04</span><h3>Проверьте доказательства</h3><p>В каждом выводе есть пункт и цитата из документа <b>ДО</b> (фиолетовая полоса) и <b>ПОСЛЕ</b> (бирюзовая) — сверить можно за секунды.</p></div>
+          </article>
+          <article class="help-step">
+            <div class="help-text"><span class="step">05</span><h3>Подтвердите как эксперт</h3><p><b>«Проверить вывод»</b> → войдите или зарегистрируйтесь → «Подтвердить» или «Отклонить» с комментарием. Решение подписывается вашим именем.</p></div>
+          </article>
+          <article class="help-step">
+            <div class="help-text"><span class="step">06</span><h3>Заключение и история</h3><p><b>«Открыть заключение»</b> показывает итоговый отчёт для печати. Все анализы доступны на вкладке «История». Таблицы подразделений и функций удобнее смотреть в веб-версии.</p></div>
+          </article>
+        </div>
         </div>
       </section>
 
@@ -208,7 +240,7 @@
       <button class="active" data-view="upload"><span>＋</span>Анализ</button>
       <button data-view="results"><span>⌁</span>Результаты</button>
       <button data-view="history"><span>◷</span>История</button>
-      <button data-view="help"><span>?</span>Помощь</button>
+      <button data-view="help"><span class="nav-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>Помощь</button>
     </nav>
   </div>
 
