@@ -91,6 +91,10 @@ test("help: connect info, QR code and a styled printable report", async () => {
   assert.match(report.headers.get("content-security-policy"), /style-src 'unsafe-inline'/);
   assert.doesNotMatch(report.headers.get("content-security-policy"), /script-src/);
 
+  // Phones open the site over plain HTTP by LAN IP: an upgrade directive would load CSS/JS over https and fail.
+  const page = await fetch(`${base}/`);
+  assert.doesNotMatch(page.headers.get("content-security-policy"), /upgrade-insecure-requests/);
+
   const image = await fetch(`${base}/help/1-start.png`);
   assert.equal(image.status, 200);
   assert.equal(image.headers.get("cross-origin-resource-policy"), "cross-origin");

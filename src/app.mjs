@@ -112,7 +112,10 @@ export function createApp({ storeMode }) {
       directives: {
         "script-src": ["'self'"],
         "style-src": ["'self'"],
-        "img-src": ["'self'", "data:"]
+        "img-src": ["'self'", "data:"],
+        // The server speaks plain HTTP on the LAN (phones open http://<IP>:4180). With this directive the
+        // browser rewrites styles.css and app.js to https:// and the page loads unstyled and without scripts.
+        "upgrade-insecure-requests": null
       }
     }
   }));
