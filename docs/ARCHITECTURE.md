@@ -51,11 +51,13 @@
 
 | Файл | Назначение |
 |---|---|
-| `src/server.mjs` | REST API, загрузка файлов, демо-наборы, заключение |
+| `src/server.mjs` | Точка входа: подключение к БД и запуск HTTP-сервера |
+| `src/app.mjs` | Сборка Express-приложения: маршруты API, логирование, ошибки |
+| `src/auth.mjs` | JWT-авторизация, роли, валидация, маршруты `/api/auth` и `/api/users` |
 | `src/parser.mjs` | Извлечение текста: mammoth (DOCX), pdf-parse (PDF), ExcelJS (XLSX) |
 | `src/analyzer.mjs` | Детерминированный анализ и доказательства |
 | `src/openai-review.mjs` | Проверка кандидатов через Responses API и Structured Outputs |
-| `src/store.mjs` | PostgreSQL (JSONB) или память для автономного запуска |
+| `src/store.mjs` | PostgreSQL (таблицы `analyses` JSONB и `users`) или память для автономного запуска |
 | `src/report.mjs` | Печатное аналитическое заключение |
 | `public/` | Адаптивный веб-интерфейс и PWA |
 | `mobile/` | Приложение для Android и iOS на Expo (React Native) |

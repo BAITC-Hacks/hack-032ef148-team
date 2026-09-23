@@ -34,7 +34,7 @@
         <div><p class="eyebrow">ИИ-АГЕНТ ОРГАНИЗАЦИОННОГО АУДИТА</p><h1 id="pageTitle">Новое сравнение</h1></div>
         <div class="top-actions">
           <button class="ghost-button hidden" id="installButton">Установить</button>
-          <span class="avatar">АУ</span>
+          <button class="account-button" id="accountButton" type="button"><span class="avatar" id="accountAvatar">?</span><span id="accountLabel">Войти</span></button>
         </div>
       </header>
 
@@ -166,6 +166,28 @@
       <label class="field-label" for="reviewComment">Комментарий</label>
       <textarea id="reviewComment" rows="5" placeholder="Почему вывод подтверждён или отклонён?"></textarea>
       <div class="dialog-actions"><button class="danger-button" value="rejected">Отклонить</button><button class="primary-button compact" value="approved">Подтвердить</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="authDialog">
+    <form id="authForm" novalidate>
+      <button class="dialog-close" type="button" id="authClose" aria-label="Закрыть">×</button>
+      <span class="pill">Вход эксперта</span><h2 id="authTitle">Войти</h2>
+      <p class="dialog-hint">Анализ и просмотр доступны всем. Подтверждать и отклонять выводы может только эксперт, и его имя попадёт в заключение.</p>
+      <div class="auth-tabs"><button type="button" class="tab active" data-auth="signin">Вход</button><button type="button" class="tab" data-auth="signup">Регистрация</button></div>
+      <div id="authNameField" class="hidden"><label class="field-label" for="authName">Имя</label><input class="text-input" id="authName" autocomplete="name" maxlength="120"></div>
+      <label class="field-label" for="authEmail">Email</label><input class="text-input" id="authEmail" type="email" autocomplete="email" maxlength="200">
+      <label class="field-label" for="authPassword">Пароль (минимум 8 символов)</label><input class="text-input" id="authPassword" type="password" autocomplete="current-password" maxlength="200">
+      <p class="auth-error hidden" id="authError"></p>
+      <div class="dialog-actions"><button class="primary-button compact" id="authSubmit" type="submit">Войти</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="accountDialog">
+    <form method="dialog">
+      <button class="dialog-close" value="cancel" aria-label="Закрыть">×</button>
+      <span class="pill" id="accountRole">Эксперт</span><h2 id="accountName"></h2><p class="dialog-hint" id="accountEmail"></p>
+      <div class="dialog-actions"><button class="danger-button" value="logout">Выйти</button></div>
     </form>
   </dialog>
 

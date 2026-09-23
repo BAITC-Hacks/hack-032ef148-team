@@ -16,6 +16,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
       AI_ENABLED: ${AI_ENABLED:-true}
+      JWT_SECRET: ${JWT_SECRET:-}
       MAX_FILE_MB: ${MAX_FILE_MB:-25}
     depends_on:
       db:

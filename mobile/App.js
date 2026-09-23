@@ -46,14 +46,19 @@ export default function App() {
   const [filter, setFilter] = useState("all");
   const [history, setHistory] = useState([]);
   const [review, setReview] = useState(null);
+  const [session, setSession] = useState(null);
+  const [auth, setAuth] = useState({ mode: "signin", name: "", email: "", password: "", error: "" });
 
   const base = api.replace(/\/+$/, "");
-  const request = useCallback(async (path, options) => {
-    const response = await fetch(`${base}${path}`, options);
+  const request = useCallback(async (path, options = {}) => {
+    const headers = { ...(options.headers || {}), ...(session ? { Authorization: `Bearer ${session.token}` } : {}) };
+    const response = await fetch(`${base}${path}`, { ...options, headers });
+    if (response.status === 204) return null;
     const payload = await response.json();
+    if (response.status === 401 && session) setSession(null);
     if (!response.ok) throw new Error(payload.error || `Ошибка ${response.status}`);
     return payload;
-  }, [base]);
+  }, [base, session]);
 
   const connect = useCallback(async () => {
     setError("");
@@ -103,6 +108,23 @@ export default function App() {
     try { setRecord(await request(`/api/analyses/${id}`)); setTab("results"); } catch (reason) { setError(reason.message); }
   }
 
+  async function submitAuth() {
+    const signup = auth.mode === "signup";
+    try {
+      const payload = await request(`/api/auth/${signup ? "signup" : "signin"}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: auth.email, password: auth.password, ...(signup ? { name: auth.name } : {}) })
+      });
+      setSession(payload);
+      setAuth((current) => ({ ...current, password: "", error: "" }));
+    } catch (reason) { setAuth((current) => ({ ...current, error: reason.message })); }
+  }
+
+  async function logout() {
+    try { await request("/api/auth/logout", { method: "POST" }); } catch { /* the token is dropped locally anyway */ }
+    setSession(null);
+  }
+
   async function saveReview(status) {
     try {
       const updated = await request(`/api/analyses/${record.id}/findings/${review.finding.id}`, {
@@ -126,6 +148,7 @@ export default function App() {
             <Text style={styles.brand}>БАТЫС AI</Text>
             <Text style={styles.brandSub}>{health ? `${health.aiConfigured ? "OpenAI" : "Локальный анализ"} · ${health.storage}` : "Нет подключения"}</Text>
           </View>
+          {session ? <Pressable onPress={logout}><Text style={styles.brandSub}>{session.user.name} · выйти</Text></Pressable> : null}
           <View style={[styles.dot, { backgroundColor: health ? "#4bd4a0" : colors.red }]} />
         </View>
 
@@ -239,12 +262,36 @@ export default function App() {
             <View style={styles.sheet}>
               <Text style={styles.pillDark}>ЭКСПЕРТНАЯ ПРОВЕРКА</Text>
               <Text style={styles.cardTitle}>{review?.finding.title}</Text>
+              {!session ? (
+                <View>
+                  <Text style={styles.muted}>Подтверждать выводы может только эксперт. Войдите или зарегистрируйтесь.</Text>
+                  <View style={[styles.row, { marginTop: 10 }]}>
+                    {[["signin", "Вход"], ["signup", "Регистрация"]].map(([mode, label]) => (
+                      <Pressable key={mode} onPress={() => setAuth((current) => ({ ...current, mode, error: "" }))} style={[styles.chip, { flex: 1, alignItems: "center", marginRight: 0 }, auth.mode === mode && styles.chipActive]}>
+                        <Text style={[styles.chipText, auth.mode === mode && { color: colors.white }]}>{label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {auth.mode === "signup" ? <TextInput style={styles.input} placeholder="Имя" value={auth.name} onChangeText={(name) => setAuth((current) => ({ ...current, name }))} /> : null}
+                  <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" keyboardType="email-address" value={auth.email} onChangeText={(email) => setAuth((current) => ({ ...current, email }))} />
+                  <TextInput style={styles.input} placeholder="Пароль (минимум 8 символов)" secureTextEntry value={auth.password} onChangeText={(password) => setAuth((current) => ({ ...current, password }))} />
+                  {auth.error ? <Text style={[styles.errorText, { marginTop: 8 }]}>{auth.error}</Text> : null}
+                  <View style={[styles.row, { marginTop: 12 }]}>
+                    <Pressable style={[styles.ghost, { flex: 1, marginTop: 0 }]} onPress={() => setReview(null)}><Text style={styles.ghostText}>Отмена</Text></Pressable>
+                    <Pressable style={[styles.primary, { flex: 1, marginTop: 0 }]} onPress={submitAuth}><Text style={styles.primaryText}>{auth.mode === "signup" ? "Создать аккаунт" : "Войти"}</Text></Pressable>
+                  </View>
+                </View>
+              ) : (
+              <View>
+              <Text style={styles.muted}>Эксперт: {session.user.name}</Text>
               <TextInput style={[styles.input, { height: 110, textAlignVertical: "top" }]} multiline placeholder="Почему вывод подтверждён или отклонён?" value={review?.comment} onChangeText={(comment) => setReview((current) => ({ ...current, comment }))} />
               <View style={styles.row}>
                 <Pressable style={[styles.ghost, { flex: 1 }]} onPress={() => setReview(null)}><Text style={styles.ghostText}>Отмена</Text></Pressable>
                 <Pressable style={[styles.danger, { flex: 1 }]} onPress={() => saveReview("rejected")}><Text style={styles.dangerText}>Отклонить</Text></Pressable>
                 <Pressable style={[styles.primary, { flex: 1, marginTop: 0 }]} onPress={() => saveReview("approved")}><Text style={styles.primaryText}>Подтвердить</Text></Pressable>
               </View>
+              </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -275,6 +322,7 @@ function Finding({ finding, onReview }) {
       ))}
       <Text style={styles.recommendation}>Рекомендация: {finding.recommendation}</Text>
       {finding.comment ? <Text style={styles.body}>Комментарий эксперта: {finding.comment}</Text> : null}
+      {finding.reviewedBy ? <Text style={styles.muted}>Решение: {finding.reviewedBy.name}</Text> : null}
       <Pressable style={styles.ghost} onPress={() => onReview(finding)}><Text style={styles.ghostText}>Проверить вывод · {finding.confidence}%</Text></Pressable>
     </View>
   );

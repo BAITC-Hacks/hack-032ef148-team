@@ -1,4 +1,4 @@
-const state = { current: null, filter: "all", mapFilter: "all", reviewFinding: null, installPrompt: null };
+const state = { current: null, filter: "all", mapFilter: "all", reviewFinding: null, installPrompt: null, user: null, authMode: "signin", afterLogin: null };
 
 const byId = (id) => document.getElementById(id);
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" }[char]));
@@ -9,6 +9,7 @@ const typeLabels = {
   function_changed: "Изменение функции", function_narrowed: "Сужение функции",
   function_duplicate: "Дублирование", conflict_risk: "Конфликт полномочий"
 };
+const roleLabels = { expert: "Эксперт", admin: "Администратор" };
 const reviewLabels = { pending: "Не проверено", approved: "Подтверждено", rejected: "Отклонено" };
 const severityLabels = { high: "Критично", medium: "Средне", low: "Низко", info: "Инфо" };
 const unitLabels = { kept: "Сохранено", transformed: "Преобразовано", added: "Создано", removed: "Упразднено" };
@@ -66,6 +67,7 @@ function findingCard(finding) {
     <span class="severity-bar"></span><div class="finding-main"><header><div><span class="pill">${escapeHtml(typeLabels[finding.type] || finding.type)}</span><h3>${escapeHtml(finding.title)}</h3></div><div class="finding-meta"><span class="severity-tag ${escapeHtml(finding.severity)}">${severityLabels[finding.severity] || ""}</span>${finding.aiReviewed ? `<span class="ai-tag ${finding.aiSupported ? "ok" : "doubt"}">${finding.aiSupported ? "AI подтвердил" : "AI сомневается"}</span>` : ""}<span class="confidence">${finding.confidence}%</span><span class="review-status ${escapeHtml(finding.status)}">${reviewLabels[finding.status] || finding.status}</span></div></header>
     <p>${escapeHtml(finding.explanation)}</p><div class="evidence-grid">${finding.evidence.map(evidenceBlock).join("")}</div><p class="recommendation"><b>Рекомендация:</b> ${escapeHtml(finding.recommendation)}</p>
     ${finding.comment ? `<p class="expert-comment"><b>Комментарий эксперта:</b> ${escapeHtml(finding.comment)}</p>` : ""}
+    ${finding.reviewedBy ? `<p class="reviewer">Решение: ${escapeHtml(finding.reviewedBy.name)} · ${new Date(finding.reviewedAt).toLocaleString("ru-RU")}</p>` : ""}
     <div class="finding-actions"><button class="approve" data-review="approved" data-id="${finding.id}">✓ Подтвердить</button><button class="reject" data-review="rejected" data-id="${finding.id}">× Отклонить</button></div></div></article>`;
 }
 
@@ -152,23 +154,32 @@ byId("mapFilters").addEventListener("click", (event) => {
   renderMap();
 });
 
-byId("findingList").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-review]");
-  if (!button) return;
-  state.reviewFinding = { id: button.dataset.id, status: button.dataset.review };
-  const finding = state.current.findings.find((item) => item.id === state.reviewFinding.id);
+function openReview(id) {
+  state.reviewFinding = { id };
+  const finding = state.current.findings.find((item) => item.id === id);
   byId("reviewTitle").textContent = finding.title;
   byId("reviewComment").value = finding.comment || "";
   byId("reviewDialog").showModal();
+}
+
+byId("findingList").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-review]");
+  if (!button) return;
+  if (!state.user) {
+    state.afterLogin = () => openReview(button.dataset.id);
+    return openAuth("signin");
+  }
+  return openReview(button.dataset.id);
 });
 
 byId("reviewDialog").addEventListener("close", async () => {
   if (!["approved", "rejected"].includes(byId("reviewDialog").returnValue) || !state.reviewFinding) return;
   try {
     const response = await fetch(`/api/analyses/${state.current.id}/findings/${state.reviewFinding.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ status: byId("reviewDialog").returnValue, comment: byId("reviewComment").value })
     });
+    if (response.status === 401) { setSession(null); state.afterLogin = () => openReview(state.reviewFinding.id); openAuth("signin"); return; }
     if (!response.ok) throw new Error((await response.json()).error);
     renderResult(await response.json());
     toast("Решение эксперта сохранено");
@@ -228,6 +239,76 @@ byId("historyList").addEventListener("click", async (event) => {
 });
 byId("refreshHistory").addEventListener("click", loadHistory);
 
+// Session: the bearer token lives in localStorage; storage may be unavailable (private mode), so every access is guarded.
+function readToken() { try { return localStorage.getItem("batys.token"); } catch { return null; } }
+function writeToken(token) { try { if (token) localStorage.setItem("batys.token", token); else localStorage.removeItem("batys.token"); } catch { /* session only */ } }
+function authHeaders() { const token = readToken(); return token ? { Authorization: `Bearer ${token}` } : {}; }
+
+function setSession(session) {
+  writeToken(session?.token || null);
+  state.user = session?.user || null;
+  byId("accountLabel").textContent = state.user ? state.user.name : "Войти";
+  byId("accountAvatar").textContent = state.user ? state.user.name.trim().slice(0, 1).toUpperCase() : "?";
+}
+
+function openAuth(mode) {
+  state.authMode = mode;
+  const signup = mode === "signup";
+  document.querySelectorAll("[data-auth]").forEach((tab) => tab.classList.toggle("active", tab.dataset.auth === mode));
+  byId("authNameField").classList.toggle("hidden", !signup);
+  byId("authTitle").textContent = signup ? "Регистрация эксперта" : "Войти";
+  byId("authSubmit").textContent = signup ? "Зарегистрироваться" : "Войти";
+  byId("authPassword").autocomplete = signup ? "new-password" : "current-password";
+  byId("authError").classList.add("hidden");
+  if (!byId("authDialog").open) byId("authDialog").showModal();
+}
+
+document.querySelectorAll("[data-auth]").forEach((tab) => tab.addEventListener("click", () => openAuth(tab.dataset.auth)));
+byId("authClose").addEventListener("click", () => { state.afterLogin = null; byId("authDialog").close(); });
+
+byId("authForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const signup = state.authMode === "signup";
+  const body = { email: byId("authEmail").value, password: byId("authPassword").value, ...(signup ? { name: byId("authName").value } : {}) };
+  byId("authSubmit").disabled = true;
+  try {
+    const response = await fetch(`/api/auth/${signup ? "signup" : "signin"}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Не удалось войти");
+    setSession(payload);
+    byId("authPassword").value = "";
+    byId("authDialog").close();
+    toast(`Вы вошли как ${payload.user.name} · ${roleLabels[payload.user.role]}`);
+    const next = state.afterLogin; state.afterLogin = null; next?.();
+  } catch (error) {
+    byId("authError").textContent = error.message;
+    byId("authError").classList.remove("hidden");
+  } finally { byId("authSubmit").disabled = false; }
+});
+
+byId("accountButton").addEventListener("click", () => {
+  if (!state.user) return openAuth("signin");
+  byId("accountName").textContent = state.user.name;
+  byId("accountEmail").textContent = state.user.email;
+  byId("accountRole").textContent = roleLabels[state.user.role];
+  return byId("accountDialog").showModal();
+});
+
+byId("accountDialog").addEventListener("close", async () => {
+  if (byId("accountDialog").returnValue !== "logout") return;
+  try { await fetch("/api/auth/logout", { method: "POST", headers: authHeaders() }); } catch { /* token is dropped locally anyway */ }
+  setSession(null);
+  toast("Вы вышли из системы");
+});
+
+async function restoreSession() {
+  if (!readToken()) return;
+  try {
+    const response = await fetch("/api/auth/me", { headers: authHeaders() });
+    setSession(response.ok ? { token: readToken(), user: (await response.json()).user } : null);
+  } catch { /* offline: keep the token for the next attempt */ }
+}
+
 async function health() {
   try {
     const response = await fetch("/api/health");
@@ -242,3 +323,4 @@ byId("installButton").addEventListener("click", async () => { await state.instal
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
 health();
 loadDemoSets();
+restoreSession();

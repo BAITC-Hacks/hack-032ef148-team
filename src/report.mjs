@@ -54,7 +54,7 @@ export function renderReport(record) {
       <p>${escapeHtml(finding.explanation)}</p>
       ${finding.evidence.map((item) => `<blockquote><b>${item.side === "before" ? "ДО" : "ПОСЛЕ"} · ${escapeHtml(item.document)}, пункт ${escapeHtml(item.clause)}</b><br>${escapeHtml(item.snippet)}</blockquote>`).join("")}
       <p><b>Рекомендация:</b> ${escapeHtml(finding.recommendation)}</p>
-      <p><b>Статус:</b> ${escapeHtml(reviewLabels[finding.status] || finding.status)}${finding.comment ? ` — ${escapeHtml(finding.comment)}` : ""}</p>
+      <p><b>Статус:</b> ${escapeHtml(reviewLabels[finding.status] || finding.status)}${finding.reviewedBy ? ` · эксперт: ${escapeHtml(finding.reviewedBy.name)}` : ""}${finding.comment ? ` — ${escapeHtml(finding.comment)}` : ""}</p>
     </article>`).join("");
 
   const units = (record.units || []).map((unit) => `<tr><td>${unitLabels[unit.status]}</td><td>${escapeHtml(unit.before || "—")}</td><td>${escapeHtml(unit.after || "—")}</td></tr>`).join("");
