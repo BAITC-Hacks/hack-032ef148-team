@@ -33,6 +33,16 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
+// The Expo web build runs on another origin (e.g. localhost:8081), so the API allows cross-origin calls.
+app.use("/api", (request, response, next) => {
+  response.set({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,PATCH,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type"
+  });
+  if (request.method === "OPTIONS") return response.sendStatus(204);
+  return next();
+});
 app.use("/api", rateLimit({ windowMs: 60_000, limit: 90, standardHeaders: "draft-8" }));
 
 app.get("/api/health", (_request, response) => {
