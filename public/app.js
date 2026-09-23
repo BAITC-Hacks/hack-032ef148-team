@@ -262,7 +262,8 @@ function setSession(session) {
   writeToken(session?.token || null);
   state.user = session?.user || null;
   byId("accountLabel").textContent = state.user ? state.user.name : "Войти";
-  byId("accountAvatar").textContent = state.user ? state.user.name.trim().slice(0, 1).toUpperCase() : "?";
+  if (state.user) byId("accountAvatar").textContent = state.user.name.trim().slice(0, 1).toUpperCase();
+  else byId("accountAvatar").innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 }
 
 function openAuth(mode) {

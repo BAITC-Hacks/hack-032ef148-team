@@ -33,6 +33,13 @@ const helpSteps = [
   { title: "Заключение и история", text: "«Открыть заключение» показывает итоговый отчёт для печати. Все анализы доступны на вкладке «История»." }
 ];
 
+const webHelp = [
+  { title: "Запустите анализ", text: "На странице «Новый анализ» нажмите демо-кнопку или загрузите комплекты «ДО» и «ПОСЛЕ» и нажмите «Запустить анализ»." },
+  { title: "Оцените итоги и доказательства", text: "Сверху — главные цифры, ниже — выводы с пунктом и цитатой из документов ДО и ПОСЛЕ. Фильтры оставляют только нужное." },
+  { title: "Подразделения и сопоставление функций", text: "Отдельные вкладки показывают, что стало с каждым подразделением, и таблицу «пункт ДО ↔ пункт ПОСЛЕ» с процентом сходства." },
+  { title: "Экспертная проверка и заключение", text: "«✓ Подтвердить» или «× Отклонить» с комментарием, затем «Открыть отчёт ↗» — заключение можно распечатать или сохранить в PDF." }
+];
+
 const accepted = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/pdf",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv", "text/plain"
@@ -47,6 +54,7 @@ export default function App() {
   const [api, setApi] = useState(DEFAULT_API);
   const [health, setHealth] = useState(null);
   const [tab, setTab] = useState("upload");
+  const [helpTab, setHelpTab] = useState("app");
   const [demoSets, setDemoSets] = useState([]);
   const [files, setFiles] = useState({ before: null, after: null });
   const [busy, setBusy] = useState(false);
@@ -176,7 +184,7 @@ export default function App() {
               ))}
             </View>
 
-            <Pressable style={styles.webBanner} onPress={() => setTab("help")}>
+            <Pressable style={styles.webBanner} onPress={() => { setHelpTab("web"); setTab("help"); }}>
               <Text style={styles.webBannerTitle}>💻 Есть веб-версия</Text>
               <Text style={styles.webBannerText}>Таблицы подразделений и функций удобнее смотреть на компьютере →</Text>
             </Pressable>
@@ -260,31 +268,49 @@ export default function App() {
 
         {tab === "help" && (
           <ScrollView contentContainerStyle={styles.page}>
-            <Text style={styles.sectionTitle}>Как пользоваться</Text>
-            {helpSteps.map((step, index) => (
+            <View style={styles.titleRow}><HelpIcon color={colors.ink} size={22} /><Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Как пользоваться</Text></View>
+            <View style={styles.segment}>
+              {[["app", "📱 Приложение"], ["web", "💻 Веб-версия"]].map(([id, label]) => (
+                <Pressable key={id} onPress={() => setHelpTab(id)} style={[styles.segmentItem, helpTab === id && styles.segmentActive]}>
+                  <Text style={[styles.segmentText, helpTab === id && { color: colors.ink }]}>{label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            {helpTab === "app" ? helpSteps.map((step, index) => (
               <View key={step.title} style={styles.card}>
                 <Text style={styles.pillDark}>ШАГ {index + 1}</Text>
                 <Text style={styles.findingTitle}>{step.title}</Text>
                 <Text style={styles.body}>{step.text}</Text>
                 {step.image ? <Image source={{ uri: `${base}/help/${step.image}` }} style={styles.helpImage} resizeMode="contain" /> : null}
               </View>
-            ))}
-            <View style={styles.hero}>
-              <Text style={styles.pill}>ВЕБ-ВЕРСИЯ</Text>
-              <Text style={styles.heroTitle}>БАТЫС AI в браузере</Text>
-              <Text style={styles.heroText}>На компьютере доступно всё то же и больше: вкладки «Подразделения» и «Сопоставление функций», инструкция со скриншотами. Откройте в браузере компьютера:</Text>
-              <Text selectable style={styles.webUrl}>{base}</Text>
-              <Pressable style={[styles.demoButton, styles.demoPrimary]} onPress={() => Linking.openURL(base)}>
-                <Text style={styles.demoText}>Открыть веб-версию ↗</Text>
-              </Pressable>
-            </View>
+            )) : (
+              <View>
+                <View style={styles.hero}>
+                  <Text style={styles.pill}>ВЕБ-ВЕРСИЯ</Text>
+                  <Text style={styles.heroTitle}>БАТЫС AI в браузере</Text>
+                  <Text style={styles.heroText}>Откройте этот адрес в браузере компьютера из той же сети:</Text>
+                  <Text selectable style={styles.webUrl}>{base}</Text>
+                  <Pressable style={[styles.demoButton, styles.demoPrimary]} onPress={() => Linking.openURL(base)}>
+                    <Text style={styles.demoText}>Открыть веб-версию ↗</Text>
+                  </Pressable>
+                </View>
+                {webHelp.map((step, index) => (
+                  <View key={step.title} style={styles.card}>
+                    <Text style={styles.pillDark}>ШАГ {index + 1}</Text>
+                    <Text style={styles.findingTitle}>{step.title}</Text>
+                    <Text style={styles.body}>{step.text}</Text>
+                  </View>
+                ))}
+                <Text style={styles.muted}>Подробная инструкция со скриншотами — в разделе «Помощь» веб-версии.</Text>
+              </View>
+            )}
           </ScrollView>
         )}
 
         <SafeAreaView edges={["bottom"]} style={styles.tabbar}>
-          {[["upload", "＋", "Анализ"], ["results", "⌁", "Результаты"], ["history", "◷", "История"], ["help", "?", "Помощь"]].map(([id, icon, label]) => (
+          {[["upload", "＋", "Анализ"], ["results", "⌁", "Результаты"], ["history", "◷", "История"], ["help", null, "Помощь"]].map(([id, icon, label]) => (
             <Pressable key={id} style={styles.tabItem} onPress={() => { setTab(id); if (id === "history") loadHistory(); }}>
-              <Text style={[styles.tabIcon, tab === id && { color: colors.indigo }]}>{icon}</Text>
+              {icon ? <Text style={[styles.tabIcon, tab === id && { color: colors.indigo }]}>{icon}</Text> : <View style={styles.tabIconBox}><HelpIcon color={tab === id ? colors.indigo : "#8a93a7"} /></View>}
               <Text style={[styles.tabLabel, tab === id && { color: colors.indigo }]}>{label}</Text>
             </Pressable>
           ))}
@@ -334,6 +360,14 @@ export default function App() {
         </Modal>
       </SafeAreaView>
     </SafeAreaProvider>
+  );
+}
+
+function HelpIcon({ color, size = 18 }) {
+  return (
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: color, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ color, fontSize: size * 0.6, lineHeight: size * 0.75, fontWeight: "900" }}>?</Text>
+    </View>
   );
 }
 
@@ -422,6 +456,12 @@ const styles = StyleSheet.create({
   tabbar: { flexDirection: "row", backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line },
   tabItem: { flex: 1, alignItems: "center", paddingVertical: 8 },
   tabIcon: { fontSize: 18, color: "#8a93a7" },
+  tabIconBox: { height: 24, alignItems: "center", justifyContent: "center" },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  segment: { flexDirection: "row", backgroundColor: "#e6ebf2", borderRadius: 13, padding: 4, marginBottom: 12 },
+  segmentItem: { flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 10 },
+  segmentActive: { backgroundColor: colors.white },
+  segmentText: { fontSize: 12, fontWeight: "800", color: "#5d6780" },
   tabLabel: { fontSize: 10, fontWeight: "800", color: "#8a93a7" },
   overlay: { flex: 1, backgroundColor: "rgba(10,16,38,0.7)", justifyContent: "center", padding: 20 },
   processing: { backgroundColor: colors.white, borderRadius: 22, padding: 28, alignItems: "center", gap: 6 },
