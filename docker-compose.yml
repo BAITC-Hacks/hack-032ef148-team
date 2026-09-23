@@ -1,0 +1,45 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: batys-ai-app
+    restart: unless-stopped
+    ports:
+      - "4180:4180"
+    environment:
+      PORT: 4180
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://batys:batys@db:5432/batys
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      MAX_FILE_MB: ${MAX_FILE_MB:-25}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4180/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+      start_period: 15s
+
+  db:
+    image: postgres:16-alpine
+    container_name: batys-ai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: batys
+      POSTGRES_USER: batys
+      POSTGRES_PASSWORD: batys
+    volumes:
+      - batys_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U batys -d batys"]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+volumes:
+  batys_data:

@@ -1,0 +1,13 @@
+{
+  "name": "БАТЫС AI",
+  "short_name": "БАТЫС AI",
+  "description": "Объяснимый анализ организационной структуры и функций",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#111936",
+  "lang": "ru",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

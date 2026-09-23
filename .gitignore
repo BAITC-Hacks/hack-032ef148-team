@@ -24,3 +24,6 @@ Thumbs.db
 # Сборка и временные файлы
 build/
 *.log
+
+# Тесты
+coverage/

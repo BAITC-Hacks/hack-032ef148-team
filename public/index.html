@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111936">
+  <meta name="description" content="Объяснимый анализ организационной структуры и функций">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <title>БАТЫС AI — анализ оргструктуры</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#upload" aria-label="БАТЫС AI">
+        <span class="brand-mark">Б</span>
+        <span><b>БАТЫС AI</b><small>Explainable AI</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Основная навигация">
+        <button class="nav-item active" data-view="upload"><span>＋</span>Новый анализ</button>
+        <button class="nav-item" data-view="results"><span>⌁</span>Результаты</button>
+        <button class="nav-item" data-view="history"><span>◷</span>История</button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="status-dot"></span>
+        <div><b id="systemStatus">Система готова</b><small id="engineStatus">Локальный анализ</small></div>
+      </div>
+      <p class="sidebar-foot">Команда БАТЫС · выводы требуют проверки специалистом</p>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div><p class="eyebrow">ИИ-АГЕНТ ОРГАНИЗАЦИОННОГО АУДИТА</p><h1 id="pageTitle">Новое сравнение</h1></div>
+        <div class="top-actions">
+          <button class="ghost-button hidden" id="installButton">Установить</button>
+          <span class="avatar">АУ</span>
+        </div>
+      </header>
+
+      <section class="view active" id="uploadView">
+        <div class="hero-card">
+          <div>
+            <span class="pill">Контроль изменений</span>
+            <h2>Сравните структуру и функции<br>без потери контекста</h2>
+            <p>Загрузите документы до и после реорганизации. Агент найдёт изменения и подтвердит каждый вывод точным фрагментом.</p>
+            <div class="hero-actions" id="demoActions"></div>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <span class="node node-a">БВА</span><span class="line line-a"></span>
+            <span class="node node-b">ДНМ</span><span class="node node-c">ДККМ</span>
+            <span class="node node-d">ДИТААД</span><span class="node node-e">ДОА</span><span class="spark">✦</span>
+          </div>
+        </div>
+
+        <form id="analysisForm" class="analysis-form">
+          <div class="form-heading">
+            <div><span class="step">01</span><h2>Документы для сравнения</h2></div>
+            <p>DOCX, PDF, XLSX, CSV или TXT · до 25 МБ</p>
+          </div>
+          <label class="field-label" for="analysisName">Название анализа</label>
+          <input class="text-input" id="analysisName" name="name" maxlength="140" placeholder="Например: Реорганизация БВА — редакции 8 и 9">
+
+          <div class="upload-grid">
+            <label class="drop-zone" id="beforeDrop">
+              <input type="file" id="beforeFile" name="before" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" required>
+              <span class="document-icon before-icon">←</span>
+              <b>Документ «ДО»</b>
+              <span class="drop-copy">Перетащите файл или нажмите для выбора</span>
+              <span class="file-chip" id="beforeName">Файл не выбран</span>
+            </label>
+            <div class="compare-badge" aria-hidden="true">⇄</div>
+            <label class="drop-zone" id="afterDrop">
+              <input type="file" id="afterFile" name="after" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" required>
+              <span class="document-icon after-icon">→</span>
+              <b>Документ «ПОСЛЕ»</b>
+              <span class="drop-copy">Перетащите файл или нажмите для выбора</span>
+              <span class="file-chip" id="afterName">Файл не выбран</span>
+            </label>
+          </div>
+
+          <div class="options-row">
+            <label class="switch-line"><input type="checkbox" id="useAi" name="useAi"><span class="switch"></span><span><b>AI-проверка выводов</b><small>Серверный OpenAI, если настроен ключ</small></span></label>
+            <button class="primary-button" id="analyzeButton" type="submit"><span>Запустить анализ</span><b>→</b></button>
+          </div>
+        </form>
+
+        <div class="trust-row">
+          <div><span>◆</span><b>Прослеживаемость</b><small>Каждый вывод содержит источник</small></div>
+          <div><span>◈</span><b>Без домыслов</b><small>Только факты из документов</small></div>
+          <div><span>▣</span><b>Экспертный контроль</b><small>Подтверждение или отклонение</small></div>
+        </div>
+      </section>
+
+      <section class="view" id="resultsView">
+        <div id="emptyResults" class="empty-state"><span>⌁</span><h2>Результатов пока нет</h2><p>Запустите новое сравнение или выберите анализ из истории.</p><button class="primary-button compact" data-go="upload">Загрузить документы</button></div>
+        <div id="resultContent" class="hidden">
+          <div class="result-head">
+            <div><span class="pill" id="resultEngine">Локальный анализ</span><h2 id="resultName">Результат анализа</h2><p id="resultDocs"></p></div>
+            <a class="ghost-button" id="reportLink" target="_blank" rel="noopener">Открыть отчёт ↗</a>
+          </div>
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="review-progress" id="reviewProgress"></div>
+          <div class="tabs" role="tablist">
+            <button class="tab active" data-tab="findings" role="tab">Выводы</button>
+            <button class="tab" data-tab="units" role="tab">Подразделения</button>
+            <button class="tab" data-tab="functions" role="tab">Сопоставление функций</button>
+          </div>
+          <div class="warning hidden" id="engineWarning"></div>
+          <div class="tab-panel active" id="findingsPanel">
+            <div class="result-toolbar">
+              <div class="filters" id="filters">
+                <button class="filter active" data-filter="all">Все</button>
+                <button class="filter" data-filter="high">Критичные</button>
+                <button class="filter" data-filter="function_lost">Потери</button>
+                <button class="filter" data-filter="function_narrowed">Сужения</button>
+                <button class="filter" data-filter="function_moved">Переносы</button>
+                <button class="filter" data-filter="function_duplicate">Дубли</button>
+                <button class="filter" data-filter="conflict_risk">Конфликты</button>
+                <button class="filter" data-filter="pending">Не проверено</button>
+              </div>
+              <span id="findingCount"></span>
+            </div>
+            <div class="finding-list" id="findingList"></div>
+          </div>
+          <div class="tab-panel" id="unitsPanel"><div class="unit-grid" id="unitGrid"></div></div>
+          <div class="tab-panel" id="functionsPanel">
+            <div class="result-toolbar">
+              <div class="filters" id="mapFilters">
+                <button class="filter active" data-map="all">Все</button>
+                <button class="filter" data-map="lost">Потеряны</button>
+                <button class="filter" data-map="narrowed">Сужены</button>
+                <button class="filter" data-map="moved">Перенесены</button>
+                <button class="filter" data-map="changed">Изменены</button>
+                <button class="filter" data-map="added">Новые</button>
+                <button class="filter" data-map="kept">Сохранены</button>
+              </div>
+              <span id="mapCount"></span>
+            </div>
+            <div class="table-wrap"><table class="map-table"><thead><tr><th>Статус</th><th>ДО · пункт и владелец</th><th>ПОСЛЕ · пункт и владелец</th><th>Сходство</th></tr></thead><tbody id="mapBody"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="historyView">
+        <div class="section-intro"><div><span class="step">03</span><h2>История анализов</h2></div><button class="ghost-button" id="refreshHistory">Обновить</button></div>
+        <div class="history-list" id="historyList"><div class="loading-line"></div></div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Мобильная навигация">
+      <button class="active" data-view="upload"><span>＋</span>Анализ</button>
+      <button data-view="results"><span>⌁</span>Результаты</button>
+      <button data-view="history"><span>◷</span>История</button>
+    </nav>
+  </div>
+
+  <div class="processing hidden" id="processing" role="status" aria-live="polite">
+    <div class="processing-card"><div class="scan-icon"><span></span></div><h2>Анализируем документы</h2><p id="processingText">Извлекаем структуру и пункты…</p><div class="progress-track"><span id="progressBar"></span></div><small>Не закрывайте страницу</small></div>
+  </div>
+
+  <dialog id="reviewDialog">
+    <form method="dialog" id="reviewForm">
+      <button class="dialog-close" value="cancel" aria-label="Закрыть">×</button>
+      <span class="pill">Экспертная проверка</span><h2 id="reviewTitle">Проверить вывод</h2>
+      <label class="field-label" for="reviewComment">Комментарий</label>
+      <textarea id="reviewComment" rows="5" placeholder="Почему вывод подтверждён или отклонён?"></textarea>
+      <div class="dialog-actions"><button class="danger-button" value="rejected">Отклонить</button><button class="primary-button compact" value="approved">Подтвердить</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast hidden" id="toast"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
