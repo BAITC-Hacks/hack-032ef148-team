@@ -39,7 +39,7 @@ function tokens(value) {
   return result;
 }
 
-function similarity(left, right) {
+export function similarity(left, right) {
   const a = tokens(left);
   const b = tokens(right);
   if (!a.size || !b.size) return 0;

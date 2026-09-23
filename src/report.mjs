@@ -68,7 +68,7 @@ export function renderReport(record) {
   </style></head><body>
     <p class="meta">БАТЫС AI · аналитическое заключение</p>
     <h1>${escapeHtml(record.name)}</h1>
-    <p class="meta">Сформировано: ${escapeHtml(new Date(record.createdAt).toLocaleString("ru-RU"))} · Движок: ${record.engine.mode === "local+openai" ? `локальный анализ + OpenAI ${escapeHtml(record.engine.model)}` : "объяснимый локальный анализ"} · Проверено экспертом: ${reviewed} из ${record.findings.length}</p>
+    <p class="meta">Сформировано: ${escapeHtml(new Date(record.createdAt).toLocaleString("ru-RU"))} · Движок: ${record.engine.mode !== "local" ? `локальный анализ + AI-агент ${escapeHtml(record.engine.provider || "")} ${escapeHtml(record.engine.model)}` : "объяснимый локальный анализ"} · Проверено экспертом: ${reviewed} из ${record.findings.length}</p>
     <h2>Итог</h2><p class="lead">${escapeHtml(conclusion(record))}</p>
     <section class="summary">
       <div class="metric"><b>${record.summary.lostFunctions}</b>потери функций</div>

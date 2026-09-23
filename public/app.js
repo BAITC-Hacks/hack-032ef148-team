@@ -76,10 +76,20 @@ function evidenceBlock(item) {
   return `<div class="evidence ${item.side}"><b>${item.side === "before" ? "ДО" : "ПОСЛЕ"} · п. ${escapeHtml(item.clause)} · ${escapeHtml(item.document)}</b>${item.unit && item.unit !== "Общие функции" ? `<small>${escapeHtml(item.unit)}</small>` : ""}<p>${escapeHtml(item.snippet)}</p></div>`;
 }
 
+// What the AI agent did for this finding: its verdict, the clauses it cited (checked against the documents) and each tool call.
+function agentBlock(finding) {
+  if (!finding.aiReviewed) return "";
+  const side = (value) => (value === "before" ? "до" : "после");
+  const step = (item) => item.tool === "search" ? `Поиск в редакции «${side(item.side)}»: «${escapeHtml(item.query)}» → ${item.found ? `пп. ${escapeHtml(item.clauses.join(", "))}` : "ничего"}` : `Прочитан п. ${escapeHtml(item.clause)} («${side(item.side)}»)${item.found ? "" : " — не найден"}`;
+  const cites = (finding.aiCitations || []).map((item) => `<span class="${item.verified ? "cite-ok" : "cite-bad"}">п. ${escapeHtml(item.clause)} «${side(item.side)}» ${item.verified ? "✓" : "— нет в документе"}</span>`).join(" ");
+  return `<details class="agent-trace"><summary><b>AI-агент:</b> ${escapeHtml(finding.aiExplanation)}</summary>${finding.aiRecommendation ? `<p><b>Рекомендация агента:</b> ${escapeHtml(finding.aiRecommendation)}</p>` : ""}${cites ? `<p><b>Ссылки:</b> ${cites}</p>` : ""}<ol>${(finding.aiTrace || []).map((item) => `<li>${step(item)}</li>`).join("")}</ol></details>`;
+}
+
 function findingCard(finding) {
   return `<article class="finding-card" data-severity="${escapeHtml(finding.severity)}">
-    <span class="severity-bar"></span><div class="finding-main"><header><div><span class="pill">${escapeHtml(typeLabels[finding.type] || finding.type)}</span><h3>${escapeHtml(finding.title)}</h3></div><div class="finding-meta"><span class="severity-tag ${escapeHtml(finding.severity)}">${severityLabels[finding.severity] || ""}</span>${finding.aiReviewed ? `<span class="ai-tag ${finding.aiSupported ? "ok" : "doubt"}">${finding.aiSupported ? "AI подтвердил" : "AI сомневается"}</span>` : ""}<span class="confidence">${finding.confidence}%</span><span class="review-status ${escapeHtml(finding.status)}">${reviewLabels[finding.status] || finding.status}</span></div></header>
+    <span class="severity-bar"></span><div class="finding-main"><header><div><span class="pill">${escapeHtml(typeLabels[finding.type] || finding.type)}</span><h3>${escapeHtml(finding.title)}</h3></div><div class="finding-meta"><span class="severity-tag ${escapeHtml(finding.severity)}">${severityLabels[finding.severity] || ""}</span>${finding.aiReviewed ? `<span class="ai-tag ${finding.aiSupported ? "ok" : "doubt"}">${finding.aiSupported ? "AI подтвердил" : "AI сомневается"}${finding.aiConfidence != null ? ` · ${finding.aiConfidence}%` : ""}</span>` : ""}<span class="confidence">${finding.confidence}%</span><span class="review-status ${escapeHtml(finding.status)}">${reviewLabels[finding.status] || finding.status}</span></div></header>
     <p>${escapeHtml(finding.explanation)}</p><div class="evidence-grid">${finding.evidence.map(evidenceBlock).join("")}</div><p class="recommendation">${finding.suggestedOwner ? `<span class="owner-chip">→ ${escapeHtml(finding.suggestedOwner)}</span>` : ""}<b>Рекомендация:</b> ${escapeHtml(finding.recommendation)}</p>
+    ${agentBlock(finding)}
     ${finding.comment ? `<p class="expert-comment"><b>Комментарий эксперта:</b> ${escapeHtml(finding.comment)}</p>` : ""}
     ${finding.reviewedBy ? `<p class="reviewer">Решение: ${escapeHtml(finding.reviewedBy.name)} · ${new Date(finding.reviewedAt).toLocaleString("ru-RU")}</p>` : ""}
     <div class="finding-actions"><button class="approve" data-review="approved" data-id="${finding.id}">✓ Подтвердить</button><button class="reject" data-review="rejected" data-id="${finding.id}">× Отклонить</button></div></div></article>`;
@@ -126,7 +136,7 @@ function renderResult(record) {
   byId("resultContent").classList.remove("hidden");
   byId("resultName").textContent = record.name;
   byId("resultDocs").textContent = `${record.documents.before.name} → ${record.documents.after.name} · функций: ${record.metrics?.functionsBefore ?? "—"} → ${record.metrics?.functionsAfter ?? "—"}`;
-  byId("resultEngine").textContent = record.engine.mode === "local+openai" ? `AI-проверка · ${record.engine.model}` : "Объяснимый локальный анализ";
+  byId("resultEngine").textContent = record.engine.mode !== "local" ? `AI-агент ${record.engine.provider || ""} · ${record.engine.model}${record.engine.agent ? ` · проверено ${record.engine.agent.reviewed}, подтверждено ${record.engine.agent.supported}, шагов ${record.engine.agent.toolCalls}` : ""}` : "Объяснимый локальный анализ";
   byId("reportLink").href = `/api/analyses/${record.id}/report`;
   const s = record.summary;
   byId("metricGrid").innerHTML = [
@@ -342,7 +352,7 @@ async function health() {
   try {
     const response = await fetch("/api/health");
     const data = await response.json();
-    byId("engineStatus").textContent = data.aiConfigured ? `OpenAI ${data.model} · ${data.storage}` : `Локальный режим · ${data.storage}`;
+    byId("engineStatus").textContent = data.aiConfigured ? `AI-агент ${data.provider} ${data.model} · ${data.storage}` : `Локальный режим · ${data.storage}`;
     byId("useAi").disabled = !data.aiConfigured;
   } catch { byId("systemStatus").textContent = "Сервер недоступен"; }
 }

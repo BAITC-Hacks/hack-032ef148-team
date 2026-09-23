@@ -11,7 +11,7 @@
                           │
      ┌────────────────────┼─────────────────────────┐
      ▼                    ▼                         ▼
- parser.mjs          analyzer.mjs              openai-review.mjs
+ parser.mjs          analyzer.mjs              ai-agent.mjs     
  DOCX/PDF/XLSX/      объяснимый анализ:        опциональная проверка
  CSV/TXT → текст     подразделения, функции,   кандидатов через
                      доказательства            Responses API
@@ -56,7 +56,7 @@
 | `src/auth.mjs` | JWT-авторизация, роли, валидация, маршруты `/api/auth` и `/api/users` |
 | `src/parser.mjs` | Извлечение текста: mammoth (DOCX), pdf-parse (PDF), ExcelJS (XLSX) |
 | `src/analyzer.mjs` | Детерминированный анализ и доказательства |
-| `src/openai-review.mjs` | Проверка кандидатов через Responses API и Structured Outputs |
+| `src/ai-agent.mjs     ` | Проверка кандидатов через Responses API и Structured Outputs |
 | `src/store.mjs` | PostgreSQL (таблицы `analyses` JSONB и `users`) или память для автономного запуска |
 | `src/report.mjs` | Печатное аналитическое заключение |
 | `public/` | Адаптивный веб-интерфейс и PWA |

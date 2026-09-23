@@ -15,6 +15,8 @@ services:
       DATABASE_URL: postgresql://batys:batys@db:5432/batys
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6-luna}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-deepseek-ai/deepseek-v4.1-flash}
       AI_ENABLED: ${AI_ENABLED:-true}
       JWT_SECRET: ${JWT_SECRET:-}
       MAX_FILE_MB: ${MAX_FILE_MB:-25}

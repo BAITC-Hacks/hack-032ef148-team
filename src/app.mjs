@@ -10,7 +10,7 @@ import { config } from "./config.mjs";
 import { analyzeDocuments } from "./analyzer.mjs";
 import { parseDocument } from "./parser.mjs";
 import { getAnalysis, listAnalyses, saveAnalysis, updateFinding } from "./store.mjs";
-import { reviewWithOpenAI } from "./openai-review.mjs";
+import { reviewWithAgent } from "./ai-agent.mjs";
 import { renderReport } from "./report.mjs";
 import { lanUrls, qrSvg } from "./connect.mjs";
 import { HttpError, authRouter, authenticate, requireRole, roles, usersRouter } from "./auth.mjs";
@@ -53,13 +53,15 @@ function describeSet(documents) {
 async function runAnalysis(before, after, { name, useAi }) {
   let analysis = analyzeDocuments(before, after);
   let aiUsed = false;
+  let aiStats = null;
   let warning = "";
 
   if (useAi && config.aiEnabled) {
     try {
-      const review = await reviewWithOpenAI(analysis, { apiKey: config.openAiKey, model: config.openAiModel });
+      const review = await reviewWithAgent(analysis, { before, after }, { provider: config.aiProvider, maxFindings: config.aiMaxFindings });
       analysis = review.result;
       aiUsed = review.used;
+      aiStats = review.stats;
       warning = review.warning;
     } catch (error) {
       warning = `AI-проверка недоступна: ${error.message}. Сохранён локальный результат.`;
@@ -71,7 +73,7 @@ async function runAnalysis(before, after, { name, useAi }) {
     name: String(name || `Сравнение: ${before.map((item) => item.name).join(", ")} → ${after.map((item) => item.name).join(", ")}`).slice(0, 140),
     createdAt: new Date().toISOString(),
     documents: { before: describeSet(before), after: describeSet(after) },
-    engine: { mode: aiUsed ? "local+openai" : "local", model: aiUsed ? config.openAiModel : null, warning },
+    engine: { mode: aiUsed ? "local+agent" : "local", provider: aiUsed ? config.aiProvider.name : null, model: aiUsed ? config.aiProvider.model : null, agent: aiStats, warning },
     ...analysis
   };
 
@@ -127,8 +129,9 @@ export function createApp({ storeMode }) {
       status: "ok",
       service: "БАТЫС AI",
       storage: storeMode,
-      aiConfigured: Boolean(config.openAiKey && config.aiEnabled),
-      model: config.openAiKey ? config.openAiModel : null
+      aiConfigured: Boolean(config.aiProvider && config.aiEnabled),
+      provider: config.aiProvider?.name || null,
+      model: config.aiProvider?.model || null
     });
   });
 
