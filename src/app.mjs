@@ -12,6 +12,7 @@ import { parseDocument } from "./parser.mjs";
 import { getAnalysis, listAnalyses, saveAnalysis, updateFinding } from "./store.mjs";
 import { reviewWithOpenAI } from "./openai-review.mjs";
 import { renderReport } from "./report.mjs";
+import { lanUrls, qrSvg } from "./connect.mjs";
 import { HttpError, authRouter, authenticate, requireRole, roles, usersRouter } from "./auth.mjs";
 
 const upload = multer({
@@ -124,6 +125,19 @@ export function createApp({ storeMode }) {
     });
   });
 
+  // How to reach this server from a phone: used by the help pages of the web and mobile apps.
+  app.get("/api/connect", (_request, response) => {
+    response.json({ webUrls: lanUrls(config.port), mobile: { expoGo: "https://expo.dev/go", sourcePath: "mobile/" } });
+  });
+
+  app.get("/api/connect/qr.svg", (request, response) => {
+    const urls = lanUrls(config.port);
+    // Only encode addresses of this server, so the endpoint cannot be used as a generic QR generator.
+    const url = urls.includes(request.query.url) ? request.query.url : urls[0];
+    if (!url) return response.status(404).json({ error: "Сетевой адрес не найден" });
+    return response.type("image/svg+xml").set("Cache-Control", "no-store").send(qrSvg(url));
+  });
+
   app.get("/api/analyses", async (_request, response) => {
     response.json({ items: await listAnalyses() });
   });
@@ -173,11 +187,18 @@ export function createApp({ storeMode }) {
   app.get("/api/analyses/:id/report", async (request, response) => {
     const record = await getAnalysis(request.params.id);
     if (!record) return response.status(404).send("Анализ не найден");
+    // The printable report is self-contained: its <style> is inline and it runs no scripts at all.
+    response.set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'self'");
     return response.type("html").send(renderReport(record));
   });
 
   app.use("/api", (_request, _response, next) => next(new HttpError(404, "Маршрут не найден")));
 
+  // Help screenshots are also shown inside the mobile app, which loads them from another origin.
+  app.use("/help", (_request, response, next) => {
+    response.set("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  });
   app.use(express.static(config.publicDir, { maxAge: "1h", etag: true }));
   app.use((request, response, next) => {
     if (request.method === "GET" && request.accepts("html")) return response.sendFile("index.html", { root: config.publicDir });

@@ -23,16 +23,18 @@ function toast(message) {
   toast.timer = setTimeout(() => element.classList.add("hidden"), 3200);
 }
 
-function showView(name) {
+function showView(name, anchor) {
   document.querySelectorAll(".view").forEach((view) => view.classList.remove("active"));
   document.querySelectorAll("[data-view]").forEach((item) => item.classList.toggle("active", item.dataset.view === name));
   byId(`${name}View`).classList.add("active");
-  byId("pageTitle").textContent = { upload: "Новое сравнение", results: "Результаты анализа", history: "История" }[name];
+  byId("pageTitle").textContent = { upload: "Новое сравнение", results: "Результаты анализа", history: "История", help: "Помощь" }[name];
   if (name === "history") loadHistory();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  if (name === "help") loadConnectInfo();
+  if (anchor) byId(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  else window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
+document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view, button.dataset.anchor)));
 document.querySelectorAll("[data-go]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.go)));
 
 for (const side of ["before", "after"]) {
@@ -307,6 +309,20 @@ async function restoreSession() {
     const response = await fetch("/api/auth/me", { headers: authHeaders() });
     setSession(response.ok ? { token: readToken(), user: (await response.json()).user } : null);
   } catch { /* offline: keep the token for the next attempt */ }
+}
+
+// Address and QR code a phone on the same network can use; on a phone itself the current origin already works.
+async function loadConnectInfo() {
+  if (loadConnectInfo.done) return;
+  try {
+    const { webUrls } = await (await fetch("/api/connect")).json();
+    const onLan = !["localhost", "127.0.0.1"].includes(location.hostname);
+    const url = onLan ? location.origin : webUrls[0];
+    byId("lanUrl").textContent = url || "адрес компьютера в сети не найден";
+    if (url && webUrls.includes(url)) byId("lanQr").src = `/api/connect/qr.svg?url=${encodeURIComponent(url)}`;
+    else byId("lanQr").closest(".mobile-qr").classList.add("hidden");
+    loadConnectInfo.done = true;
+  } catch { byId("lanUrl").textContent = "не удалось определить адрес"; }
 }
 
 async function health() {

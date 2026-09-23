@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as DocumentPicker from "expo-document-picker";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +24,15 @@ const filters = [
   { id: "function_moved", label: "Переносы" }, { id: "function_duplicate", label: "Дубли" }, { id: "conflict_risk", label: "Конфликты" },
   { id: "pending", label: "Не проверено" }
 ];
+const helpSteps = [
+  { title: "Подключитесь к серверу", text: "Телефон и компьютер с БАТЫС AI должны быть в одной сети. Зелёная точка в шапке — подключение есть. Адрес меняется в блоке «Сервер» на вкладке «Анализ»." },
+  { title: "Запустите анализ", text: "Нажмите «▶ Положение о внутреннем аудите: редакция 8 → 9» для демо или выберите файлы «ДО» и «ПОСЛЕ» (DOCX, PDF, XLSX, CSV, TXT) и нажмите «Запустить анализ».", image: "mobile-1.png" },
+  { title: "Изучите результаты", text: "Сверху — потери, сужения, переносы, дубли и конфликты. Фильтры под цифрами оставляют только нужные выводы.", image: "mobile-2.png" },
+  { title: "Проверьте доказательства", text: "В каждом выводе есть пункт и цитата из документа ДО (фиолетовая полоса) и ПОСЛЕ (бирюзовая) — сверить можно за секунды." },
+  { title: "Подтвердите как эксперт", text: "«Проверить вывод» → войдите или зарегистрируйтесь → «Подтвердить» или «Отклонить» с комментарием. Решение подписывается вашим именем." },
+  { title: "Заключение и история", text: "«Открыть заключение» показывает итоговый отчёт для печати. Все анализы доступны на вкладке «История»." }
+];
+
 const accepted = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/pdf",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/csv", "text/plain"
@@ -167,6 +176,11 @@ export default function App() {
               ))}
             </View>
 
+            <Pressable style={styles.webBanner} onPress={() => setTab("help")}>
+              <Text style={styles.webBannerTitle}>💻 Есть веб-версия</Text>
+              <Text style={styles.webBannerText}>Таблицы подразделений и функций удобнее смотреть на компьютере →</Text>
+            </Pressable>
+
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Документы для сравнения</Text>
               <Text style={styles.muted}>DOCX, PDF, XLSX, CSV или TXT</Text>
@@ -244,8 +258,31 @@ export default function App() {
           />
         )}
 
+        {tab === "help" && (
+          <ScrollView contentContainerStyle={styles.page}>
+            <Text style={styles.sectionTitle}>Как пользоваться</Text>
+            {helpSteps.map((step, index) => (
+              <View key={step.title} style={styles.card}>
+                <Text style={styles.pillDark}>ШАГ {index + 1}</Text>
+                <Text style={styles.findingTitle}>{step.title}</Text>
+                <Text style={styles.body}>{step.text}</Text>
+                {step.image ? <Image source={{ uri: `${base}/help/${step.image}` }} style={styles.helpImage} resizeMode="contain" /> : null}
+              </View>
+            ))}
+            <View style={styles.hero}>
+              <Text style={styles.pill}>ВЕБ-ВЕРСИЯ</Text>
+              <Text style={styles.heroTitle}>БАТЫС AI в браузере</Text>
+              <Text style={styles.heroText}>На компьютере доступно всё то же и больше: вкладки «Подразделения» и «Сопоставление функций», инструкция со скриншотами. Откройте в браузере компьютера:</Text>
+              <Text selectable style={styles.webUrl}>{base}</Text>
+              <Pressable style={[styles.demoButton, styles.demoPrimary]} onPress={() => Linking.openURL(base)}>
+                <Text style={styles.demoText}>Открыть веб-версию ↗</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        )}
+
         <SafeAreaView edges={["bottom"]} style={styles.tabbar}>
-          {[["upload", "＋", "Анализ"], ["results", "⌁", "Результаты"], ["history", "◷", "История"]].map(([id, icon, label]) => (
+          {[["upload", "＋", "Анализ"], ["results", "⌁", "Результаты"], ["history", "◷", "История"], ["help", "?", "Помощь"]].map(([id, icon, label]) => (
             <Pressable key={id} style={styles.tabItem} onPress={() => { setTab(id); if (id === "history") loadHistory(); }}>
               <Text style={[styles.tabIcon, tab === id && { color: colors.indigo }]}>{icon}</Text>
               <Text style={[styles.tabLabel, tab === id && { color: colors.indigo }]}>{label}</Text>
@@ -388,5 +425,10 @@ const styles = StyleSheet.create({
   tabLabel: { fontSize: 10, fontWeight: "800", color: "#8a93a7" },
   overlay: { flex: 1, backgroundColor: "rgba(10,16,38,0.7)", justifyContent: "center", padding: 20 },
   processing: { backgroundColor: colors.white, borderRadius: 22, padding: 28, alignItems: "center", gap: 6 },
-  sheet: { backgroundColor: colors.white, borderRadius: 22, padding: 20 }
+  sheet: { backgroundColor: colors.white, borderRadius: 22, padding: 20 },
+  webBanner: { backgroundColor: "#e8e7ff", borderRadius: 16, padding: 14, marginBottom: 12 },
+  webBannerTitle: { fontWeight: "800", color: "#514cc8", fontSize: 14 },
+  webBannerText: { color: "#514cc8", fontSize: 12, marginTop: 3 },
+  helpImage: { width: "100%", height: 420, marginTop: 12, borderRadius: 12, backgroundColor: colors.soft },
+  webUrl: { color: "#7ee4d8", fontWeight: "800", fontSize: 15, marginTop: 10 }
 });

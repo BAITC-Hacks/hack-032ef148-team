@@ -74,3 +74,24 @@ test("auth, roles and signed expert review work end to end", async () => {
   assert.equal((await call("DELETE", `/api/users/${expert.body.user.id}`, { token: admin.body.token })).status, 204);
   assert.equal((await call("GET", "/api/nope")).status, 404);
 });
+
+test("help: connect info, QR code and a styled printable report", async () => {
+  const connect = await call("GET", "/api/connect");
+  assert.equal(connect.status, 200);
+  assert.ok(Array.isArray(connect.body.webUrls));
+  if (connect.body.webUrls.length) {
+    const qr = await fetch(`${base}/api/connect/qr.svg`);
+    assert.equal(qr.headers.get("content-type"), "image/svg+xml; charset=utf-8");
+    assert.match(await qr.text(), /^<svg/);
+  }
+
+  const analysis = (await call("POST", "/api/demo/synthetic", { body: {} })).body;
+  const report = await fetch(`${base}/api/analyses/${analysis.id}/report`);
+  // The report's inline <style> must be allowed, otherwise it renders unstyled.
+  assert.match(report.headers.get("content-security-policy"), /style-src 'unsafe-inline'/);
+  assert.doesNotMatch(report.headers.get("content-security-policy"), /script-src/);
+
+  const image = await fetch(`${base}/help/1-start.png`);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get("cross-origin-resource-policy"), "cross-origin");
+});
