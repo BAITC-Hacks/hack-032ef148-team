@@ -22,6 +22,5 @@ node_modules/
 Thumbs.db
 
 # Сборка и временные файлы
-dist/
 build/
 *.log
