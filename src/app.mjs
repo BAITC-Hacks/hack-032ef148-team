@@ -17,7 +17,7 @@ import { HttpError, authRouter, authenticate, requireRole, roles, usersRouter } 
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: config.maxFileBytes, files: 2 }
+  limits: { fileSize: config.maxFileBytes, files: 20 }
 });
 
 const demoSets = {
@@ -40,6 +40,16 @@ async function loadSample(fileName) {
   return parseDocument({ originalname: path.basename(fileName), buffer, size: buffer.length });
 }
 
+// A side of the comparison may be a whole set of documents; the record keeps each file for the report.
+function describeSet(documents) {
+  return {
+    name: documents.map((document) => document.name).join(", "),
+    size: documents.reduce((sum, document) => sum + document.size, 0),
+    characters: documents.reduce((sum, document) => sum + document.characters, 0),
+    files: documents.map(({ name, size, characters }) => ({ name, size, characters }))
+  };
+}
+
 async function runAnalysis(before, after, { name, useAi }) {
   let analysis = analyzeDocuments(before, after);
   let aiUsed = false;
@@ -58,12 +68,9 @@ async function runAnalysis(before, after, { name, useAi }) {
 
   const record = {
     id: randomUUID(),
-    name: String(name || `Сравнение ${before.name} и ${after.name}`).slice(0, 140),
+    name: String(name || `Сравнение: ${before.map((item) => item.name).join(", ")} → ${after.map((item) => item.name).join(", ")}`).slice(0, 140),
     createdAt: new Date().toISOString(),
-    documents: {
-      before: { name: before.name, size: before.size, characters: before.characters },
-      after: { name: after.name, size: after.size, characters: after.characters }
-    },
+    documents: { before: describeSet(before), after: describeSet(after) },
     engine: { mode: aiUsed ? "local+openai" : "local", model: aiUsed ? config.openAiModel : null, warning },
     ...analysis
   };
@@ -148,12 +155,12 @@ export function createApp({ storeMode }) {
     return response.json(record);
   });
 
-  app.post("/api/analyses", upload.fields([{ name: "before", maxCount: 1 }, { name: "after", maxCount: 1 }]), async (request, response) => {
-    const beforeFile = request.files?.before?.[0];
-    const afterFile = request.files?.after?.[0];
-    if (!beforeFile || !afterFile) return response.status(400).json({ error: "Загрузите документы «до» и «после»" });
+  app.post("/api/analyses", upload.fields([{ name: "before", maxCount: 10 }, { name: "after", maxCount: 10 }]), async (request, response) => {
+    const beforeFiles = request.files?.before || [];
+    const afterFiles = request.files?.after || [];
+    if (!beforeFiles.length || !afterFiles.length) return response.status(400).json({ error: "Загрузите документы «до» и «после»" });
 
-    const [before, after] = await Promise.all([parseDocument(beforeFile), parseDocument(afterFile)]);
+    const [before, after] = await Promise.all([Promise.all(beforeFiles.map(parseDocument)), Promise.all(afterFiles.map(parseDocument))]);
     const record = await runAnalysis(before, after, { name: request.body.name, useAi: request.body.useAi === "true" });
     return response.status(201).json(record);
   });
@@ -165,7 +172,7 @@ export function createApp({ storeMode }) {
   app.post("/api/demo/:id", async (request, response) => {
     const set = demoSets[request.params.id];
     if (!set) return response.status(404).json({ error: "Демо-набор не найден" });
-    const [before, after] = await Promise.all([loadSample(set.before), loadSample(set.after)]);
+    const [before, after] = await Promise.all([loadSample(set.before), loadSample(set.after)]).then(([left, right]) => [[left], [right]]);
     const record = await runAnalysis(before, after, { name: set.name, useAi: request.body?.useAi === true });
     return response.status(201).json(record);
   });

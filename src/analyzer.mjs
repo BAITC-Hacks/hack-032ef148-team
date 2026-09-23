@@ -213,11 +213,23 @@ function flowText(flow, target) {
   return flow?.total ? ` ${flow.moved} из ${flow.total} функций перешли в «${target}».` : "";
 }
 
-export function analyzeDocuments(beforeDocument, afterDocument) {
-  const beforeUnits = extractUnits(beforeDocument.text);
-  const afterUnits = extractUnits(afterDocument.text);
-  const beforeFunctions = extractFunctions(beforeDocument);
-  const afterFunctions = extractFunctions(afterDocument);
+// A side is a set of documents (org chart, regulations, job descriptions…): units and functions are
+// collected across all of them, and every item remembers the file it came from for evidence.
+function collect(documents) {
+  const units = new Map();
+  for (const document of documents) {
+    for (const unit of extractUnits(document.text)) if (!units.has(unit.key)) units.set(unit.key, { ...unit, document: document.name });
+  }
+  return { units: [...units.values()].slice(0, 60), functions: documents.flatMap(extractFunctions).slice(0, 900) };
+}
+
+export function analyzeDocuments(before, after) {
+  const beforeSet = collect([before].flat());
+  const afterSet = collect([after].flat());
+  const beforeUnits = beforeSet.units;
+  const afterUnits = afterSet.units;
+  const beforeFunctions = beforeSet.functions;
+  const afterFunctions = afterSet.functions;
   const findings = [];
 
   // Global one-to-one assignment: strongest pairs first, so a near-identical clause is never
@@ -250,7 +262,7 @@ export function analyzeDocuments(beforeDocument, afterDocument) {
     return { beforeItem, afterItem: null, score: fallback.score };
   });
 
-  const structureRef = (unit, document) => ({ ...unit, document: document.name, clause: "структура", unit: unit.name, text: unit.name });
+  const structureRef = (unit) => ({ ...unit, clause: "структура", unit: unit.name, text: unit.name });
   const unitMap = [];
   for (const pair of matchUnits(beforeUnits, afterUnits, functionMatches)) {
     const status = !pair.before ? "added" : !pair.after ? "removed" : pair.nameScore < 0.82 ? "transformed" : "kept";
@@ -262,16 +274,16 @@ export function analyzeDocuments(beforeDocument, afterDocument) {
       functionsTotal: (pair.flow || pair.heir?.flow)?.total || 0
     });
     if (!pair.before) {
-      findings.push(makeFinding("unit_added", "info", `Создано подразделение: ${pair.after.name}`, "Подразделение обнаружено только в документе «после».", 0.9, null, structureRef(pair.after, afterDocument), "Проверить полномочия, ресурсы и границы ответственности нового подразделения."));
+      findings.push(makeFinding("unit_added", "info", `Создано подразделение: ${pair.after.name}`, "Подразделение обнаружено только в документе «после».", 0.9, null, structureRef(pair.after), "Проверить полномочия, ресурсы и границы ответственности нового подразделения."));
     } else if (!pair.after) {
       let heirText = " Функции подразделения не найдены в новой редакции.";
       if (pair.heir) {
         heirText = flowText(pair.heir.flow, pair.heir.after.name);
         if (pair.heir.flow.moved < pair.heir.flow.total) heirText += " Остальные функции без явного правопреемника.";
       }
-      findings.push(makeFinding("unit_removed", "high", `Упразднено подразделение: ${pair.before.name}`, `Подразделение из документа «до» отсутствует в новой структуре.${heirText}`, 0.84, structureRef(pair.before, beforeDocument), pair.heir ? structureRef(pair.heir.after, afterDocument) : null, pair.heir ? `Подтвердить передачу функций в «${pair.heir.after.name}» и закрыть разрывы ответственности.` : "Подтвердить упразднение или указать подразделение-правопреемника."));
+      findings.push(makeFinding("unit_removed", "high", `Упразднено подразделение: ${pair.before.name}`, `Подразделение из документа «до» отсутствует в новой структуре.${heirText}`, 0.84, structureRef(pair.before), pair.heir ? structureRef(pair.heir.after) : null, pair.heir ? `Подтвердить передачу функций в «${pair.heir.after.name}» и закрыть разрывы ответственности.` : "Подтвердить упразднение или указать подразделение-правопреемника."));
     } else if (pair.nameScore < 0.82) {
-      findings.push(makeFinding("unit_transformed", "medium", `Преобразование: ${pair.before.name} → ${pair.after.name}`, `Подразделение сопоставлено по названию и переходу функций.${flowText(pair.flow, pair.after.name)}`, pair.score, structureRef(pair.before, beforeDocument), structureRef(pair.after, afterDocument), "Подтвердить правопреемство и перенос функций."));
+      findings.push(makeFinding("unit_transformed", "medium", `Преобразование: ${pair.before.name} → ${pair.after.name}`, `Подразделение сопоставлено по названию и переходу функций.${flowText(pair.flow, pair.after.name)}`, pair.score, structureRef(pair.before), structureRef(pair.after), "Подтвердить правопреемство и перенос функций."));
     }
   }
 
@@ -358,7 +370,7 @@ export function analyzeDocuments(beforeDocument, afterDocument) {
       if (score < 0.74) continue;
       const conflict = /(?<![\p{L}\p{N}])(?:утвержда(?:ет|ют)|контролиру(?:ет|ют)|согласовыва(?:ет|ют)|провод(?:ит|ят) провер|назнача(?:ет|ют)|принима(?:ет|ют) риск)/iu.test(`${left.text} ${right.text}`);
       overlaps += 1;
-      findings.push(makeFinding(conflict ? "conflict_risk" : "function_duplicate", conflict ? "high" : "medium", conflict ? "Потенциальный конфликт полномочий" : "Возможное дублирование функций", `Похожие функции закреплены за разными владельцами: «${left.unit}» (п. ${left.clause}) и «${right.unit}» (п. ${right.clause}).`, score, { ...left, side: "after" }, { ...right, side: "after" }, conflict ? "Контрольная функция у двух владельцев: определить, кто утверждает/контролирует, через матрицу RACI." : "Развести зоны ответственности через RACI или назначить единого владельца."));
+      findings.push(makeFinding(conflict ? "conflict_risk" : "function_duplicate", conflict ? "high" : "medium", conflict ? "Потенциальный конфликт интересов (полномочий)" : "Возможное дублирование функций", `Похожие функции закреплены за разными владельцами: «${left.unit}» (п. ${left.clause}) и «${right.unit}» (п. ${right.clause}).`, score, { ...left, side: "after" }, { ...right, side: "after" }, conflict ? "Контрольная функция у двух владельцев: определить, кто утверждает/контролирует, через матрицу RACI." : "Развести зоны ответственности через RACI или назначить единого владельца."));
     }
   }
 

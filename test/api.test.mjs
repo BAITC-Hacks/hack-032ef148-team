@@ -95,3 +95,24 @@ test("help: connect info, QR code and a styled printable report", async () => {
   assert.equal(image.status, 200);
   assert.equal(image.headers.get("cross-origin-resource-policy"), "cross-origin");
 });
+
+test("accepts a set of documents per side and cites each file", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const file = async (path) => new Blob([await readFile(new URL(`../samples/${path}`, import.meta.url))]);
+  const form = new FormData();
+  form.append("before", await file("polozhenie-vnutrenniy-audit-red-8.docx"), "polozhenie-red-8.docx");
+  form.append("before", await file("synthetic/polozhenie-bva-redakciya-8.txt"), "otdel-zakupok-v8.txt");
+  form.append("after", await file("polozhenie-vnutrenniy-audit-red-9.docx"), "polozhenie-red-9.docx");
+  form.append("after", await file("synthetic/polozhenie-bva-redakciya-9.txt"), "otdel-zakupok-v9.txt");
+
+  const response = await fetch(`${base}/api/analyses`, { method: "POST", body: form });
+  assert.equal(response.status, 201);
+  const record = await response.json();
+  assert.deepEqual(record.documents.before.files.map((item) => item.name), ["polozhenie-red-8.docx", "otdel-zakupok-v8.txt"]);
+
+  const cited = new Set(record.findings.flatMap((finding) => finding.evidence.map((item) => item.document)));
+  assert.ok(cited.has("polozhenie-red-8.docx") && cited.has("otdel-zakupok-v8.txt"), "evidence points to the right file of the set");
+  const lost = record.findings.find((finding) => finding.type === "function_lost" && /антикоррупционных/.test(finding.evidence[0].snippet));
+  assert.equal(lost.evidence[0].document, "otdel-zakupok-v8.txt");
+  assert.ok(record.units.some((unit) => unit.status === "added" && /ИТ-аудита/.test(unit.after)));
+});

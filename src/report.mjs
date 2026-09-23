@@ -17,7 +17,7 @@ const labels = {
   function_changed: "Изменение функции",
   function_narrowed: "Сужение функции",
   function_duplicate: "Дублирование",
-  conflict_risk: "Конфликт полномочий"
+  conflict_risk: "Конфликт интересов"
 };
 const severityLabels = { high: "критично", medium: "средне", low: "низко", info: "информация" };
 const reviewLabels = { pending: "не проверено", approved: "подтверждено экспертом", rejected: "отклонено экспертом" };

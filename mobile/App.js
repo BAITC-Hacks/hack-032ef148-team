@@ -15,7 +15,7 @@ const typeLabels = {
   unit_added: "Новое подразделение", unit_removed: "Упразднение", unit_transformed: "Преобразование",
   function_lost: "Потеря функции", function_added: "Новая функция", function_moved: "Перенос функции",
   function_changed: "Изменение функции", function_narrowed: "Сужение функции",
-  function_duplicate: "Дублирование", conflict_risk: "Конфликт полномочий"
+  function_duplicate: "Дублирование", conflict_risk: "Конфликт интересов"
 };
 const reviewLabels = { pending: "Не проверено", approved: "Подтверждено", rejected: "Отклонено" };
 const severityColors = { high: colors.red, medium: colors.amber, low: "#8da0bb", info: colors.teal };
@@ -98,15 +98,15 @@ export default function App() {
   function runUpload() {
     if (!files.before || !files.after) return setError("Выберите документы «ДО» и «ПОСЛЕ»");
     const form = new FormData();
-    form.append("before", fileField(files.before));
-    form.append("after", fileField(files.after));
+    for (const asset of files.before) form.append("before", fileField(asset));
+    for (const asset of files.after) form.append("after", fileField(asset));
     form.append("useAi", "false");
     return run(() => request("/api/analyses", { method: "POST", body: form }));
   }
 
   async function pick(side) {
-    const result = await DocumentPicker.getDocumentAsync({ type: accepted, copyToCacheDirectory: true });
-    if (!result.canceled) setFiles((current) => ({ ...current, [side]: result.assets[0] }));
+    const result = await DocumentPicker.getDocumentAsync({ type: accepted, copyToCacheDirectory: true, multiple: true });
+    if (!result.canceled) setFiles((current) => ({ ...current, [side]: result.assets.slice(0, 10) }));
   }
 
   async function loadHistory() {
@@ -183,11 +183,11 @@ export default function App() {
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Документы для сравнения</Text>
-              <Text style={styles.muted}>DOCX, PDF, XLSX, CSV или TXT</Text>
+              <Text style={styles.muted}>DOCX, PDF, XLSX, CSV или TXT · до 10 файлов на сторону</Text>
               {["before", "after"].map((side) => (
                 <Pressable key={side} style={[styles.drop, files[side] && styles.dropFilled]} onPress={() => pick(side)}>
-                  <Text style={styles.dropTitle}>{side === "before" ? "← Документ «ДО»" : "→ Документ «ПОСЛЕ»"}</Text>
-                  <Text style={styles.muted} numberOfLines={1}>{files[side]?.name || "Нажмите, чтобы выбрать файл"}</Text>
+                  <Text style={styles.dropTitle}>{side === "before" ? "← Комплект «ДО»" : "→ Комплект «ПОСЛЕ»"}</Text>
+                  <Text style={styles.muted} numberOfLines={2}>{files[side]?.length ? files[side].map((asset) => asset.name).join(", ") : "Один или несколько файлов — нажмите, чтобы выбрать"}</Text>
                 </Pressable>
               ))}
               <Pressable style={[styles.primary, busy && { opacity: 0.6 }]} onPress={runUpload} disabled={busy}>

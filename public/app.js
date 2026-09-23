@@ -7,7 +7,7 @@ const typeLabels = {
   unit_added: "Новое подразделение", unit_removed: "Упразднение", unit_transformed: "Преобразование",
   function_lost: "Потеря функции", function_added: "Новая функция", function_moved: "Перенос функции",
   function_changed: "Изменение функции", function_narrowed: "Сужение функции",
-  function_duplicate: "Дублирование", conflict_risk: "Конфликт полномочий"
+  function_duplicate: "Дублирование", conflict_risk: "Конфликт интересов"
 };
 const roleLabels = { expert: "Эксперт", admin: "Администратор" };
 const reviewLabels = { pending: "Не проверено", approved: "Подтверждено", rejected: "Отклонено" };
@@ -42,15 +42,17 @@ for (const side of ["before", "after"]) {
   const drop = byId(`${side}Drop`);
   const name = byId(`${side}Name`);
   input.addEventListener("change", () => {
-    name.textContent = input.files[0]?.name || "Файл не выбран";
-    drop.classList.toggle("has-file", Boolean(input.files[0]));
+    const files = [...input.files];
+    name.textContent = !files.length ? "Файл не выбран" : files.length === 1 ? files[0].name : `${files.length} файла: ${files.map((file) => file.name).join(", ")}`;
+    name.title = files.map((file) => file.name).join("\n");
+    drop.classList.toggle("has-file", files.length > 0);
   });
   for (const eventName of ["dragenter", "dragover"]) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.add("dragging"); });
   for (const eventName of ["dragleave", "drop"]) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.remove("dragging"); });
   drop.addEventListener("drop", (event) => {
     if (!event.dataTransfer.files.length) return;
     const transfer = new DataTransfer();
-    transfer.items.add(event.dataTransfer.files[0]);
+    for (const file of [...event.dataTransfer.files].slice(0, 10)) transfer.items.add(file);
     input.files = transfer.files;
     input.dispatchEvent(new Event("change"));
   });

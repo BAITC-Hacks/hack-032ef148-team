@@ -61,25 +61,25 @@
         <form id="analysisForm" class="analysis-form">
           <div class="form-heading">
             <div><span class="step">01</span><h2>Документы для сравнения</h2></div>
-            <p>DOCX, PDF, XLSX, CSV или TXT · до 25 МБ</p>
+            <p>DOCX, PDF, XLSX, CSV или TXT · до 10 файлов на сторону, до 25 МБ каждый</p>
           </div>
           <label class="field-label" for="analysisName">Название анализа</label>
           <input class="text-input" id="analysisName" name="name" maxlength="140" placeholder="Например: Реорганизация БВА — редакции 8 и 9">
 
           <div class="upload-grid">
             <label class="drop-zone" id="beforeDrop">
-              <input type="file" id="beforeFile" name="before" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" required>
+              <input type="file" id="beforeFile" name="before" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" multiple required>
               <span class="document-icon before-icon">←</span>
-              <b>Документ «ДО»</b>
-              <span class="drop-copy">Перетащите файл или нажмите для выбора</span>
+              <b>Комплект «ДО»</b>
+              <span class="drop-copy">Один или несколько файлов: оргструктура, положения, инструкции</span>
               <span class="file-chip" id="beforeName">Файл не выбран</span>
             </label>
             <div class="compare-badge" aria-hidden="true">⇄</div>
             <label class="drop-zone" id="afterDrop">
-              <input type="file" id="afterFile" name="after" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" required>
+              <input type="file" id="afterFile" name="after" accept=".docx,.pdf,.xlsx,.csv,.txt,.md" multiple required>
               <span class="document-icon after-icon">→</span>
-              <b>Документ «ПОСЛЕ»</b>
-              <span class="drop-copy">Перетащите файл или нажмите для выбора</span>
+              <b>Комплект «ПОСЛЕ»</b>
+              <span class="drop-copy">Один или несколько файлов: оргструктура, положения, инструкции</span>
               <span class="file-chip" id="afterName">Файл не выбран</span>
             </label>
           </div>
