@@ -1,0 +1,27 @@
+# Секреты и локальные настройки
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node.js
+node_modules/
+
+# Редакторы и система
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Сборка и временные файлы
+dist/
+build/
+*.log
