@@ -6,7 +6,7 @@
 
 ![Результаты анализа](docs/screenshots/results.png)
 
-**Презентация на одном листе:** [docs/presentation.html](docs/presentation.html). Там схема архитектуры, путь анализа, находки на контрольном комплекте и сверка с ТЗ. Откройте файл в браузере; для PDF нажмите Ctrl+P.
+**Презентация на одном листе:** [docs/presentation.html](docs/presentation.html). Там схема архитектуры, путь анализа, находки на контрольном комплекте и сверка с ТЗ. Готовый PDF для печати и показа: [docs/batys-ai-presentation.pdf](docs/batys-ai-presentation.pdf).
 
 ## Быстрый старт: 1 команда, 1 клик
 

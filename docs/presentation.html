@@ -132,10 +132,17 @@
     .finds li { grid-template-columns: 1fr; gap: 4px; }
   }
   @media print {
-    html, body { background: #fff; }
-    body { padding: 0; }
-    .sheet { border: none; gap: 36px; }
-    section { break-inside: avoid; }
+    @page { size: A4; margin: 12mm 12mm 14mm; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { background: var(--sheet); }
+    body { padding: 0; font-size: 14px; }
+    .sheet { border: none; padding: 0; gap: 30px; max-width: none; }
+    /* Diagrams scroll sideways on screen; on paper they must shrink to the page width instead. */
+    .diagram { overflow: visible; margin: 0; padding: 0; }
+    .diagram svg { min-width: 0; }
+    section, figure, .caution, .finds li, .checks li { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    .screens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 </style>
 </head>
