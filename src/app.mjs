@@ -212,7 +212,9 @@ export function createApp({ storeMode }) {
     response.set("Cross-Origin-Resource-Policy", "cross-origin");
     next();
   });
-  app.use(express.static(config.publicDir, { maxAge: "1h", etag: true }));
+  // Revalidate on every load (cheap 304 via ETag): a cached stylesheet from an older build
+  // otherwise pairs with fresh HTML and the page renders half old, half new.
+  app.use(express.static(config.publicDir, { maxAge: 0, etag: true }));
   app.use((request, response, next) => {
     if (request.method === "GET" && request.accepts("html")) return response.sendFile("index.html", { root: config.publicDir });
     return next();
