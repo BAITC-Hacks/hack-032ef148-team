@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Схема БАТЫС AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=PT+Mono&display=swap">
+<style>
+  /* One deliberate visual world: a hand-drawn sheet on paper. Single theme by choice. */
+  :root {
+    --paper: #f1e8d4;
+    --sheet: #fbf6ea;
+    --ink: #2d4a6b;
+    --ink-soft: #5b7896;
+    --note: #d0602a;
+    --text: #26374a;
+    --muted: #6f7b86;
+    --rule: #d9c9a8;
+    --hand: "Caveat", "Segoe Print", "Comic Sans MS", cursive;
+    --body: "PT Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono: "PT Mono", "Consolas", "Courier New", monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font: 16px/1.55 var(--body);
+    padding: 28px 16px 56px;
+  }
+  .sheet {
+    max-width: 1180px;
+    margin: 0 auto;
+    background: var(--sheet);
+    border: 2px solid var(--note);
+    border-radius: 18px;
+    padding: 40px clamp(18px, 4vw, 56px) 48px;
+    display: grid;
+    gap: 56px;
+  }
+  .label {
+    font: 700 13px/1 var(--body);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--note);
+    margin: 0 0 14px;
+  }
+  .hand { font-family: var(--hand); }
+  h1, h2, h3 { font-family: var(--hand); color: var(--ink); font-weight: 700; margin: 0; text-wrap: balance; line-height: 1.05; }
+  h1 { font-size: clamp(48px, 7vw, 84px); }
+  h2 { font-size: clamp(34px, 4.4vw, 46px); margin-bottom: 8px; }
+  h3 { font-size: 30px; }
+  p { margin: 0; max-width: 66ch; }
+  .note { font-family: var(--hand); color: var(--note); font-size: 23px; line-height: 1.15; }
+  .muted { color: var(--muted); }
+  a { color: var(--ink); }
+  a:focus-visible, summary:focus-visible { outline: 2px dashed var(--note); outline-offset: 3px; }
+
+  /* Title */
+  .masthead { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: end; }
+  .masthead .lead { font-size: 19px; margin-top: 16px; }
+  .masthead .meta { display: grid; gap: 10px; font-size: 15px; }
+  .masthead .meta b { color: var(--ink); }
+  .meta-row { display: flex; gap: 10px; align-items: baseline; border-bottom: 1px dashed var(--rule); padding-bottom: 8px; }
+  .meta-row span:first-child { font: 700 12px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); min-width: 92px; }
+
+  /* Problem strip */
+  .risks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+  .risk { border-top: 2px solid var(--ink); padding-top: 10px; }
+  .risk b { display: block; font-family: var(--hand); font-size: 27px; color: var(--ink); line-height: 1; margin-bottom: 6px; }
+  .risk p { font-size: 15px; color: var(--muted); }
+
+  figure { margin: 0; }
+  .diagram { overflow-x: auto; margin: 0 -8px; padding: 0 8px; }
+  .diagram svg { display: block; width: 100%; min-width: 820px; height: auto; color: var(--ink); }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 80ch; }
+  svg .h { font-family: var(--hand); }
+  svg .b { font-family: var(--body); }
+
+  /* Results */
+  .results { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+  .finds { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .finds li { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 16px; padding-bottom: 14px; border-bottom: 1px dashed var(--rule); }
+  .finds .kind { font: 700 12px/1.3 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--note); padding-top: 4px; }
+  .finds b { color: var(--ink); }
+  .finds .src { font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .tally { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+  .tally div { border-left: 2px solid var(--ink); padding-left: 12px; }
+  .tally b { display: block; font-family: var(--hand); font-size: 58px; line-height: .9; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tally b.hot { color: var(--note); }
+  .tally span { font-size: 14px; color: var(--muted); }
+
+  /* Task checklist */
+  .checks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 40px; list-style: none; padding: 0; margin: 18px 0 0; }
+  .checks li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .checks svg { width: 26px; height: 26px; color: var(--ink); margin-top: 1px; }
+  .checks .todo svg { color: var(--note); }
+  .checks small { display: block; color: var(--muted); font-size: 14px; }
+
+  /* Screens */
+  .screens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; margin-top: 18px; }
+  .shot img { display: block; width: 100%; max-width: 100%; border: 2px solid var(--ink); border-radius: 10px; background: #1b1f2a; }
+  .shot:nth-child(1) img { transform: rotate(-.8deg); }
+  .shot:nth-child(3) img { transform: rotate(.7deg); }
+  .shot figcaption { font-family: var(--hand); color: var(--note); font-size: 22px; line-height: 1.1; margin-top: 10px; }
+
+  /* Run */
+  .run { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+  pre { margin: 12px 0 0; background: #fffdf6; border: 1.5px dashed var(--ink-soft); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font: 14px/1.6 var(--mono); color: var(--text); }
+  .stack { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+  .stack li { display: flex; gap: 12px; align-items: baseline; border-bottom: 1px dashed var(--rule); padding-bottom: 7px; font-size: 15px; }
+  .stack li span { font: 700 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); min-width: 118px; }
+
+  .caution { border: 2px dashed var(--note); border-radius: 14px; padding: 16px 20px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .caution svg { width: 36px; height: 36px; color: var(--note); }
+  .caution b { color: var(--note); }
+
+  footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; border-top: 1px dashed var(--rule); padding-top: 18px; font-size: 14px; color: var(--muted); }
+
+  @media (max-width: 860px) {
+    .masthead, .results, .run { grid-template-columns: 1fr; }
+    .risks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .screens { grid-template-columns: 1fr; }
+    .checks { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 440px) {
+    .risks { grid-template-columns: 1fr; }
+    .finds li { grid-template-columns: 1fr; gap: 4px; }
+  }
+  @media print {
+    html, body { background: #fff; }
+    body { padding: 0; }
+    .sheet { border: none; gap: 36px; }
+    section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <!-- 1. Title -->
+  <header class="masthead">
+    <div>
+      <p class="label">HackAlem AI · спец-трек Казахтелеком · кейс «Анализ оргструктуры»</p>
+      <h1>БАТЫС AI</h1>
+      <p class="lead">ИИ-агент сверяет положения и оргструктуры <b>до</b> и <b>после</b> реорганизации и показывает, какие функции потерялись, сузились, задвоились или ушли другому владельцу. Каждый вывод подтверждён номером пункта и цитатой.</p>
+      <p class="note" style="margin-top:14px">решает эксперт — агент только показывает, где смотреть</p>
+    </div>
+    <div class="meta">
+      <div class="meta-row"><span>Команда</span><b>БАТЫС</b></div>
+      <div class="meta-row"><span>Участник</span>Бисенбаев Султан Бекрикулы</div>
+      <div class="meta-row"><span>Код</span><a href="https://github.com/BAITC-Hacks/hack-032ef148-team">github.com/BAITC-Hacks/hack-032ef148-team</a></div>
+      <div class="meta-row"><span>Проверка</span>11 автотестов, включая контрольный комплект</div>
+    </div>
+  </header>
+
+  <!-- 2. Problem -->
+  <section aria-labelledby="problem">
+    <p class="label">Что болит</p>
+    <h2 id="problem">Положение на 85 тысяч знаков сверяют глазами</h2>
+    <p>При реорганизации сотрудник вручную сопоставляет редакции положений, оргструктуры и приказы. Функция может исчезнуть, задвоиться или тихо потерять «ежеквартально» — и этого никто не заметит до первой проверки.</p>
+    <div class="risks">
+      <div class="risk"><b>потеря</b><p>за функцию больше никто не отвечает</p></div>
+      <div class="risk"><b>сужение</b><p>функция осталась, но без периодичности или объёма</p></div>
+      <div class="risk"><b>дублирование</b><p>два подразделения делают одно и то же</p></div>
+      <div class="risk"><b>конфликт интересов</b><p>одна контрольная функция у двух владельцев</p></div>
+    </div>
+  </section>
+
+  <!-- 3. Architecture -->
+  <section aria-labelledby="arch">
+    <p class="label">Кто работает и где что живёт</p>
+    <h2 id="arch">Один сервер, два клиента, одна база</h2>
+    <figure class="diagram">
+      <svg viewBox="0 0 1100 560" role="img" aria-label="Аналитик, эксперт и руководитель заходят с браузера или телефона через сервер Express с проверкой входа; сервер передаёт документы анализатору, при наличии ключа — AI-агенту, собирает заключение и хранит историю в PostgreSQL.">
+        <defs>
+          <filter id="rough" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="4" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/>
+          </filter>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <marker id="ahn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M1 1 L9 5 L1 9 Z" fill="#d0602a" stroke="#d0602a" stroke-width="1"/>
+          </marker>
+          <g id="person" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="0" cy="-26" r="9"/>
+            <path d="M0 -17 V8 M-14 -6 H14 M0 8 L-11 28 M0 8 L11 28"/>
+          </g>
+          <g id="db" fill="#fbf6ea" stroke="currentColor" stroke-width="2">
+            <path d="M-26 -18 V18 A26 8 0 0 0 26 18 V-18"/>
+            <ellipse cx="0" cy="-18" rx="26" ry="8"/>
+            <path d="M-26 0 A26 8 0 0 0 26 0" fill="none"/>
+          </g>
+        </defs>
+
+        <g filter="url(#rough)">
+          <!-- people -->
+          <g transform="translate(70,110)"><use href="#person"/></g>
+          <g transform="translate(70,245)"><use href="#person"/></g>
+          <g transform="translate(70,380)"><use href="#person"/></g>
+          <!-- phone -->
+          <rect x="150" y="215" width="22" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="161" cy="244" r="1.8" fill="currentColor"/>
+          <!-- arrows people → gate -->
+          <path d="M110 105 C170 100 190 150 262 160" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M110 250 C170 265 200 255 262 250" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M110 385 C170 395 200 360 262 345" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <!-- gate -->
+          <path d="M270 90 Q320 64 370 90 V470 H270 Z" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <line x1="270" y1="138" x2="370" y2="138" stroke="#5b7896" stroke-width="1.6"/>
+          <!-- modules -->
+          <rect x="450" y="70" width="190" height="210" rx="12" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <rect x="672" y="70" width="190" height="210" rx="12" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <rect x="894" y="70" width="176" height="210" rx="12" fill="none" stroke="currentColor" stroke-width="2.2"/>
+          <!-- gate → modules -->
+          <path d="M372 180 C410 180 415 175 446 175" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M545 282 V312 H768 V286" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <path d="M768 312 H982 V286" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <!-- db -->
+          <path d="M320 472 V500 H640" fill="none" stroke="currentColor" stroke-width="2" marker-end="url(#ah)"/>
+          <g transform="translate(690,480)"><use href="#db"/></g>
+          <!-- dashed note arrows -->
+          <path d="M395 76 C430 30 520 26 560 60" fill="none" stroke="#d0602a" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#ahn)"/>
+          <path d="M760 360 C800 400 840 405 900 380" fill="none" stroke="#d0602a" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#ahn)"/>
+        </g>
+
+        <!-- people labels -->
+        <text class="b" x="70" y="160" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">Аналитик</text>
+        <text class="b" x="70" y="178" text-anchor="middle" font-size="12.5" fill="#6f7b86">загружает комплекты</text>
+        <text class="b" x="70" y="295" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">Эксперт</text>
+        <text class="b" x="70" y="313" text-anchor="middle" font-size="12.5" fill="#6f7b86">подтверждает выводы</text>
+        <text class="b" x="70" y="430" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">Руководитель</text>
+        <text class="b" x="70" y="448" text-anchor="middle" font-size="12.5" fill="#6f7b86">читает заключение</text>
+        <text class="h" x="182" y="286" font-size="21" fill="#2d4a6b">веб и</text>
+        <text class="h" x="182" y="306" font-size="21" fill="#2d4a6b">телефон</text>
+        <text class="b" x="30" y="40" font-size="12.5" font-weight="700" letter-spacing="2" fill="#d0602a">КТО РАБОТАЕТ</text>
+
+        <!-- gate labels -->
+        <text class="b" x="320" y="122" text-anchor="middle" font-size="13" font-weight="700" letter-spacing="2" fill="currentColor">ВОРОТА</text>
+        <text class="b" x="320" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="currentColor">Express 5</text>
+        <text class="b" x="320" y="190" text-anchor="middle" font-size="12.5" fill="#6f7b86">helmet, лимиты</text>
+        <text class="b" x="320" y="207" text-anchor="middle" font-size="12.5" fill="#6f7b86">запросов, логи</text>
+        <text class="h" x="320" y="262" text-anchor="middle" font-size="19" fill="#d0602a">вход по JWT:</text>
+        <text class="h" x="320" y="282" text-anchor="middle" font-size="19" fill="#d0602a">решения</text>
+        <text class="h" x="320" y="302" text-anchor="middle" font-size="19" fill="#d0602a">подписывает</text>
+        <text class="h" x="320" y="322" text-anchor="middle" font-size="19" fill="#d0602a">эксперт</text>
+        <g transform="translate(320,358)" fill="none" stroke="#d0602a" stroke-width="2" stroke-linecap="round"><circle cx="-8" cy="0" r="7"/><path d="M-1 0 H16 M10 0 V6 M15 0 V5"/></g>
+        <text class="b" x="320" y="395" text-anchor="middle" font-size="12.5" fill="#6f7b86">демо и просмотр —</text>
+        <text class="b" x="320" y="412" text-anchor="middle" font-size="12.5" fill="#6f7b86">без входа</text>
+
+        <!-- modules text -->
+        <g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+          <path d="M470 90 h18 l7 7 v25 h-25 z M488 90 v7 h7"/>
+          <circle cx="706" cy="106" r="15"/><path d="M698 106 h16 M706 98 v16"/>
+          <path d="M914 92 h22 v28 h-22 z M918 100 h14 M918 107 h14 M918 114 h9"/>
+        </g>
+        <text class="h" x="500" y="116" font-size="27" font-weight="700" fill="currentColor">Анализатор</text>
+        <text class="b" x="468" y="152" font-size="13" fill="currentColor">· Word, PDF, Excel → пункты</text>
+        <text class="b" x="468" y="172" font-size="13" fill="currentColor">· владельцы по заголовкам</text>
+        <text class="b" x="468" y="192" font-size="13" fill="currentColor">· сопоставление функций</text>
+        <text class="b" x="468" y="212" font-size="13" fill="currentColor">· подразделения по переходу</text>
+        <text class="b" x="468" y="228" font-size="13" fill="currentColor">  функций</text>
+        <text class="b" x="468" y="262" font-size="12" font-weight="700" fill="#d0602a">детерминированно · ~50 мс</text>
+
+        <text class="h" x="730" y="116" font-size="27" font-weight="700" fill="currentColor">AI-агент</text>
+        <text class="b" x="690" y="152" font-size="13" fill="currentColor">· перепроверяет кандидатов</text>
+        <text class="b" x="690" y="172" font-size="13" fill="currentColor">· OpenAI или NVIDIA</text>
+        <text class="b" x="690" y="192" font-size="13" fill="currentColor">· сам ищет и читает пункты</text>
+        <text class="b" x="690" y="212" font-size="13" fill="currentColor">· ссылки на пункты</text>
+        <text class="b" x="690" y="228" font-size="13" fill="currentColor">  сверяются с документом</text>
+        <text class="b" x="690" y="262" font-size="12" font-weight="700" fill="#d0602a">по желанию · нужен ключ</text>
+
+        <text class="h" x="944" y="116" font-size="25" font-weight="700" fill="currentColor">Заключение</text>
+        <text class="b" x="910" y="152" font-size="13" fill="currentColor">· итог и таблицы</text>
+        <text class="b" x="910" y="172" font-size="13" fill="currentColor">· рекомендации:</text>
+        <text class="b" x="910" y="188" font-size="13" fill="currentColor">  кому отдать функцию</text>
+        <text class="b" x="910" y="208" font-size="13" fill="currentColor">· подписи экспертов</text>
+        <text class="b" x="910" y="262" font-size="12" font-weight="700" fill="#d0602a">печать и PDF</text>
+
+        <!-- notes -->
+        <text class="h" x="408" y="34" font-size="22" fill="#d0602a">комплект до 10 файлов на сторону</text>
+        <text class="h" x="600" y="410" font-size="22" fill="#d0602a">ключа нет — всё работает локально</text>
+        <text class="b" x="690" y="528" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">PostgreSQL</text>
+        <text class="b" x="690" y="545" text-anchor="middle" font-size="12.5" fill="#6f7b86">история и решения</text>
+        <text class="b" x="740" y="487" font-size="12.5" fill="#6f7b86">без базы — хранение в памяти</text>
+      </svg>
+    </figure>
+    <figcaption>Веб-версия и мобильное приложение (Expo, iOS и Android) ходят в один и тот же API. Анализатор работает без интернета; AI-агент подключается ключом OpenAI или NVIDIA: он сам ищет и читает нужные пункты через инструменты, а сервер принимает его вердикт, только если все процитированные пункты действительно есть в документах.</figcaption>
+  </section>
+
+  <!-- 4. Flow -->
+  <section aria-labelledby="flow">
+    <p class="label">Путь одного анализа</p>
+    <h2 id="flow">От двух комплектов до подписанного заключения</h2>
+    <figure class="diagram">
+      <svg viewBox="0 0 1100 330" role="img" aria-label="Шесть шагов: комплекты загружены, пункты извлечены, функции сопоставлены, выводы с цитатами, эксперт подтвердил, заключение готово. Отклонённый вывод остаётся в отчёте с пометкой; функция без пары становится потерей.">
+        <defs>
+          <filter id="rough2" x="-5%" y="-5%" width="110%" height="110%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="9" result="n"/>
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2"/>
+          </filter>
+          <marker id="ahn2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M1 1 L9 5 L1 9 Z" fill="#d0602a" stroke="#d0602a" stroke-width="1"/>
+          </marker>
+          <marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </marker>
+        </defs>
+        <g filter="url(#rough2)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- 1 docs -->
+          <path d="M70 70 h26 l10 10 v38 h-36 z M96 70 v10 h10 M78 92 h20 M78 101 h20 M78 110 h13"/>
+          <path d="M84 64 h26 l10 10 v38" stroke="#5b7896"/>
+          <!-- 2 gears -->
+          <circle cx="265" cy="88" r="11"/><path d="M265 70 v6 M265 100 v6 M247 88 h6 M277 88 h6 M252 75 l4 4 M274 97 l4 4 M252 101 l4 -4 M274 79 l4 -4"/>
+          <circle cx="292" cy="112" r="7"/><path d="M292 100 v4 M292 120 v4 M280 112 h4 M300 112 h4"/>
+          <!-- 3 match: two columns with links -->
+          <path d="M440 70 v48 M490 70 v48 M440 78 L490 84 M440 94 L490 100 M440 110 L490 92" />
+          <circle cx="440" cy="78" r="3" fill="currentColor"/><circle cx="440" cy="94" r="3" fill="currentColor"/><circle cx="440" cy="110" r="3" fill="currentColor"/>
+          <!-- 4 magnifier -->
+          <circle cx="650" cy="88" r="15"/><path d="M661 99 l16 16"/>
+          <!-- 5 check -->
+          <circle cx="830" cy="92" r="20"/><path d="M820 92 l7 7 l14 -15"/>
+          <!-- 6 document with seal -->
+          <path d="M992 68 h30 v48 h-30 z M998 80 h18 M998 89 h18 M998 98 h11"/>
+          <circle cx="1022" cy="114" r="8" stroke="#d0602a"/>
+          <!-- main line -->
+          <path d="M130 94 H230" marker-end="url(#ah2)"/>
+          <path d="M318 94 H420" marker-end="url(#ah2)"/>
+          <path d="M506 94 H620" marker-end="url(#ah2)"/>
+          <path d="M684 94 H800" marker-end="url(#ah2)"/>
+          <path d="M858 94 H976" marker-end="url(#ah2)"/>
+        </g>
+        <g filter="url(#rough2)" fill="none" stroke="#d0602a" stroke-width="2" stroke-dasharray="7 6">
+          <path d="M826 60 C800 12 690 10 662 60" marker-end="url(#ahn2)"/>
+          <path d="M465 190 C470 240 520 262 560 262"/>
+        </g>
+        <g class="b" font-size="15" font-weight="700" fill="currentColor" text-anchor="middle">
+          <text x="90" y="150">Комплекты загружены</text>
+          <text x="272" y="150">Пункты извлечены</text>
+          <text x="465" y="150">Функции сопоставлены</text>
+          <text x="655" y="150">Выводы с цитатами</text>
+          <text x="830" y="150">Эксперт подтвердил</text>
+          <text x="1010" y="150">Заключение</text>
+        </g>
+        <g class="b" font-size="12.5" fill="#6f7b86" text-anchor="middle">
+          <text x="90" y="170">«до» и «после»,</text><text x="90" y="186">Word, PDF, Excel</text>
+          <text x="272" y="170">номера пунктов</text><text x="272" y="186">и их владельцы</text>
+          <text x="465" y="170">сильные пары первыми,</text><text x="465" y="186">один к одному</text>
+          <text x="655" y="170">документ, пункт,</text><text x="655" y="186">фрагмент</text>
+          <text x="830" y="170">имя и комментарий</text><text x="830" y="186">попадают в отчёт</text>
+          <text x="1010" y="170">итог, таблицы,</text><text x="1010" y="186">рекомендации</text>
+        </g>
+        <text class="h" x="744" y="26" text-anchor="middle" font-size="22" fill="#d0602a">отклонил — вывод помечен, но виден в отчёте</text>
+        <text class="h" x="572" y="268" font-size="22" fill="#d0602a">нет пары со сходством ≥ 0,38 — это потеря</text>
+        <text class="h" x="572" y="292" font-size="22" fill="#d0602a">пропали «ежеквартально», «по итогам года» — сужение</text>
+        <g transform="translate(70,258)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="14" cy="14" r="14"/><path d="M14 5 v9 l6 5"/></g>
+        <text class="b" x="112" y="266" font-size="14" font-weight="700" fill="currentColor">≈ 50 мс на пару положений</text>
+        <text class="b" x="112" y="284" font-size="12.5" fill="#6f7b86">93 и 90 функций, 85 тысяч знаков каждое</text>
+      </svg>
+    </figure>
+    <figcaption>Слова приводятся к основе («организует» = «организуют»), сходство считается по множеству основ. Подразделение сопоставляется не только по названию, но и по тому, куда ушли его функции.</figcaption>
+  </section>
+
+  <!-- 5. Results -->
+  <section aria-labelledby="results">
+    <p class="label">Проверка на контрольном комплекте · редакция 8 → 9</p>
+    <h2 id="results">Что агент нашёл в положении о внутреннем аудите</h2>
+    <div class="results">
+      <ul class="finds">
+        <li><span class="kind">создано</span><div><b>ДИТААД и ДОА</b> — два новых департамента. <span class="src">п. 3.4, ред. 9</span></div></li>
+        <li><span class="kind">упразднено</span><div>Должность <b>«Директор направления внутреннего аудита»</b>: 10 из 12 её функций нашли новых владельцев. <span class="src">п. 5.3, ред. 8</span></div></li>
+        <li><span class="kind">потеря</span><div>У ДККМ исчезли <b>анализ результатов непрерывного аудита</b> и <b>предложения в план работ</b>. Похожий текст остался только у ДНМ, у которого эти функции были и раньше. <span class="src">п. 5.5.4, 5.5.10, ред. 8</span></div></li>
+        <li><span class="kind">сужение</span><div>Отчёты ДККМ больше не <b>«ежеквартальные и по итогам года»</b> — периодичность пропала. <span class="src">п. 5.5.5 → 5.5.3</span></div></li>
+        <li><span class="kind">рекомендация</span><div>Вернуть функции 5.5.4 и 5.5.10 <b>ДККМ</b> — подразделение сохранилось в новой структуре.</div></li>
+      </ul>
+      <div>
+        <div class="tally" aria-label="Итоги анализа">
+          <div><b class="hot">5</b><span>потерь функций</span></div>
+          <div><b class="hot">2</b><span>сужения</span></div>
+          <div><b>15</b><span>переносов владельца</span></div>
+          <div><b>5</b><span>возможных дублей</span></div>
+          <div><b class="hot">1</b><span>конфликт интересов</span></div>
+          <div><b>2 → 4</b><span>департамента</span></div>
+        </div>
+        <p class="note" style="margin-top:22px">все эти находки закреплены автотестом — агент не может «забыть» их молча</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Task compliance -->
+  <section aria-labelledby="task">
+    <p class="label">Сверка с техническим заданием</p>
+    <h2 id="task">Обязательное закрыто, необязательное — частично</h2>
+    <ul class="checks">
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Реорганизованные, сохранённые и созданные подразделения<small>вкладка «Подразделения»</small></div></li>
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Сопоставление функционала и потери функций<small>таблица «пункт ДО ↔ пункт ПОСЛЕ»</small></div></li>
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Дублирование и конфликт интересов<small>типовые обязанности руководителей отфильтрованы</small></div></li>
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Источник у каждого вывода: документ и пункт<small>проверяется тестом по всем выводам</small></div></li>
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Итоговое аналитическое заключение<small>печать и PDF, с подписями экспертов</small></div></li>
+      <li><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/><path d="M7 13 l4 4 l8 -9"/></svg><div>Рекомендации по перераспределению функций<small>необязательный пункт 3 — кому отдать функцию и почему</small></div></li>
+      <li class="todo"><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/></svg><div>Сверка с законодательством и стандартами<small>необязательно · нормативы организатором не выданы</small></div></li>
+      <li class="todo"><svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="4 3" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="5"/></svg><div>Сравнение со структурами других операторов<small>необязательно · нет открытых данных</small></div></li>
+    </ul>
+  </section>
+
+  <!-- 7. Screens -->
+  <section aria-labelledby="screens">
+    <p class="label">Как это выглядит</p>
+    <h2 id="screens">Веб-версия и телефон</h2>
+    <div class="screens">
+      <figure class="shot"><img src="../public/help/2-results.png" alt="Результаты анализа: метрики потерь, сужений, переносов и дублей" loading="lazy"><figcaption>итоги видны сразу — красное первым</figcaption></figure>
+      <figure class="shot"><img src="../public/help/3-evidence.png" alt="Карточка вывода с цитатами из документов до и после" loading="lazy"><figcaption>цитата «до» рядом с цитатой «после»</figcaption></figure>
+      <figure class="shot"><img src="../public/help/5-functions.png" alt="Таблица сопоставления функций с процентом сходства" loading="lazy"><figcaption>таблица функций — пункт к пункту</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- 8. Run + stack -->
+  <section class="run" aria-labelledby="run">
+    <div>
+      <p class="label">Запуск</p>
+      <h2 id="run">Одна команда, один клик</h2>
+      <pre>git clone https://github.com/BAITC-Hacks/hack-032ef148-team.git
+cd hack-032ef148-team
+docker compose up --build
+
+# без Docker:
+npm install && npm start</pre>
+      <p style="margin-top:12px">Откройте <b>http://localhost:4180</b> и нажмите «▶ Положение о внутреннем аудите: редакция 8 → 9». С телефона — адрес и QR-код в разделе «Помощь».</p>
+    </div>
+    <div>
+      <p class="label">Стек</p>
+      <h3>Всё на одном языке</h3>
+      <ul class="stack">
+        <li><span>Сервер</span>Node.js, Express 5, JWT, helmet</li>
+        <li><span>Документы</span>mammoth, pdf-parse, ExcelJS</li>
+        <li><span>AI</span>агент с инструментами · OpenAI или NVIDIA</li>
+        <li><span>База</span>PostgreSQL 16 или память</li>
+        <li><span>Клиенты</span>веб и PWA · Expo (iOS, Android)</li>
+        <li><span>Запуск</span>Docker Compose · 11 автотестов</li>
+      </ul>
+    </div>
+  </section>
+
+  <aside class="caution" aria-label="Ограничение">
+    <svg viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M18 4 L33 31 H3 Z"/><path d="M18 14 v8 M18 26 v1"/></svg>
+    <div><b>Осторожно: выводы рекомендательные.</b> Агент не утверждает ничего, чего нет в документах, и не принимает решений. Каждый вывод подтверждает или отклоняет ответственный эксперт — его имя остаётся в заключении.</div>
+  </aside>
+
+  <footer>
+    <span>БАТЫС AI · команда БАТЫС · HackAlem AI, 23.09.2026</span>
+    <span>Код и инструкция: github.com/BAITC-Hacks/hack-032ef148-team</span>
+  </footer>
+</main>
+</body>
+</html>
